@@ -2,7 +2,19 @@
 
 Each section below is a complete, self-contained recipe. Always produce: Gradle config + Swift bridge (or note it can be empty) + Kotlin usage.
 
-The key choice per package — **always verify each dependency individually** using the detection steps in `references/exporting.md` § "Detecting ObjC Compatibility via the Modulemap". Never assume based on package name:
+For every dependency added, perform these two checks before writing the Gradle config:
+
+**Check 1 — Minimum OS version**
+Look up the package's minimum deployment target (usually in its `Package.swift` under `.platforms`). Then ensure `minIos`, `minMacos`, `minTvos`, or `minWatchos` in `swiftPackageConfig` is set to at least that version. Setting a lower value than the package requires will cause a build error. See `references/setup.md` § "Key swiftPackageConfig Options" for the properties and their defaults.
+
+```swift
+// Example: package declares minimum iOS 16
+.platforms: [.iOS(.v16)]
+// → set minIos = "16.0" (or higher) in swiftPackageConfig
+```
+
+**Check 2 — ObjC compatibility (`exportToKotlin`)**
+Run the detection steps in `references/exporting.md` § "Detecting ObjC Compatibility via the Modulemap". Never assume based on package name:
 - **Confirmed ObjC-compatible** (has `@interface` headers or `@objc`/`@objcMembers` on public `NSObject` subclasses) → `exportToKotlin = true`, bridge file may be empty
 - **Pure Swift** (no ObjC headers, no `@objc` on public types) → `exportToKotlin = false`, must wrap in `@objcMembers` bridge class
 
