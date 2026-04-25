@@ -4,8 +4,16 @@ Each section below is a complete, self-contained recipe. Always produce: Gradle 
 
 For every dependency added, these two steps are **mandatory** before writing any Gradle config. Do not skip them.
 
-**Step 1 — Set the minimum OS version (always required)**
-Read the package-level `.platforms` declaration at the top of its `Package.swift`. Set `minIos`, `minMacos`, `minTvos`, and `minWatchos` in `swiftPackageConfig` to at least those values — for every platform your KMP module targets. This is not optional: a mismatch causes a build error. The plugin defaults (`minIos = "12.0"`, `minMacos = "10.13"`, `minTvos = "12.0"`, `minWatchos = "4.0"`) are often too low for modern packages. See `references/setup.md` § "Key swiftPackageConfig Options".
+**Step 1 — Update the minimum OS version (required for every new dependency or product)**
+Each time a dependency or product is added, read its package-level `.platforms` declaration in `Package.swift` and update `minIos`, `minMacos`, `minTvos`, and `minWatchos` in `swiftPackageConfig` if the new requirement is higher than the current value. The configured minimum must always be the highest value required by any dependency in the block. Never assume the existing value is sufficient — each addition may raise the bar.
+
+```swift
+// New dependency requires iOS 16 — current config has minIos = "15.0"
+// → raise to minIos = "16.0"
+platforms: [.iOS(.v16)]
+```
+
+If the package has no `.platforms` declaration, no change is needed for that dependency. The plugin defaults (`minIos = "12.0"`, `minMacos = "10.13"`, `minTvos = "12.0"`, `minWatchos = "4.0"`) are often too low for modern packages — see `references/setup.md` § "Key swiftPackageConfig Options".
 
 ```swift
 // Package.swift of the dependency — read the top-level platforms block
