@@ -21,7 +21,21 @@ See **Detecting ObjC Compatibility via the Modulemap** below for how to determin
 
 **Step 1 — read `Package.swift`**
 
-Find the target(s) that back the product you want to export. ObjC-compatible targets either declare a `publicHeadersPath` or follow SPM's implicit convention of placing headers under `Sources/[TargetName]/include/`:
+Find the product definition first, then trace it to its **direct** target — the one listed in the product's `targets:` array. Only that target's interface is visible to cinterop. Transitive dependencies (targets that the direct target depends on internally) are not reachable from Kotlin, even if they have ObjC headers.
+
+```swift
+// The product exposes "MySDK" — only inspect the MySDK target
+.library(name: "MySDK", targets: ["MySDK"])
+
+// ✅ Direct target has publicHeadersPath — ObjC interface is reachable
+.target(name: "MySDK", publicHeadersPath: "Sources/Public", ...)
+
+// ❌ Only the internal dependency has headers — NOT reachable via the product
+.target(name: "MySDK", dependencies: ["MySDKInternal"], ...)  // no publicHeadersPath
+.target(name: "MySDKInternal", publicHeadersPath: "Sources/Public", ...)  // irrelevant
+```
+
+ObjC-compatible direct targets either declare a `publicHeadersPath` or follow SPM's implicit convention of placing headers under `Sources/[TargetName]/include/`:
 
 ```swift
 // Explicit — ObjC-compatible
@@ -152,6 +166,7 @@ If the source or headers are inaccessible (private repo, closed-source binary wi
 | XCFramework header: only `@class` forward-declarations, no `@interface` | ❌ `false` |
 | Post-build header is nearly empty (Swift typedef stub) | ❌ `false` |
 | Cannot access source or headers to check | ❌ `false` — check after build via generated modulemap |
+| ObjC headers exist only in a transitive dependency, not the direct target | ❌ `false` — cinterop only sees the direct target's interface |
 
 ## Export a Package to Kotlin
 
