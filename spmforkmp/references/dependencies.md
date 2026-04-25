@@ -2,10 +2,10 @@
 
 Each section below is a complete, self-contained recipe. Always produce: Gradle config + Swift bridge (or note it can be empty) + Kotlin usage.
 
-For every dependency added, perform these two checks before writing the Gradle config:
+For every dependency added, these two steps are **mandatory** before writing any Gradle config. Do not skip them.
 
-**Check 1 — Minimum OS version**
-Look up the package-level `.platforms` declaration at the top of its `Package.swift`. Raise each relevant `min*` property in `swiftPackageConfig` to match — only for the platforms your KMP module actually targets. Setting a lower value than the package requires causes a build error. The plugin defaults (`minIos = "12.0"`, `minMacos = "10.13"`, `minTvos = "12.0"`, `minWatchos = "4.0"`) are often too low for modern packages. See `references/setup.md` § "Key swiftPackageConfig Options".
+**Step 1 — Set the minimum OS version (always required)**
+Read the package-level `.platforms` declaration at the top of its `Package.swift`. Set `minIos`, `minMacos`, `minTvos`, and `minWatchos` in `swiftPackageConfig` to at least those values — for every platform your KMP module targets. This is not optional: a mismatch causes a build error. The plugin defaults (`minIos = "12.0"`, `minMacos = "10.13"`, `minTvos = "12.0"`, `minWatchos = "4.0"`) are often too low for modern packages. See `references/setup.md` § "Key swiftPackageConfig Options".
 
 ```swift
 // Package.swift of the dependency — read the top-level platforms block
@@ -23,7 +23,7 @@ target.swiftPackageConfig("nativeBridge") {
 
 If the package has no `.platforms` declaration, the defaults are safe to keep.
 
-**Check 2 — ObjC compatibility (`exportToKotlin`)**
+**Step 2 — Set `exportToKotlin` (always required)**
 Run the detection steps in `references/exporting.md` § "Detecting ObjC Compatibility via the Modulemap". Never assume based on package name:
 - **Confirmed ObjC-compatible** (has `@interface` headers or `@objc`/`@objcMembers` on public `NSObject` subclasses) → `exportToKotlin = true`, bridge file may be empty
 - **Pure Swift** (no ObjC headers, no `@objc` on public types) → `exportToKotlin = false`, must wrap in `@objcMembers` bridge class
