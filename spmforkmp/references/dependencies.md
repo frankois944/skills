@@ -2,9 +2,9 @@
 
 Each section below is a complete, self-contained recipe. Always produce: Gradle config + Swift bridge (or note it can be empty) + Kotlin usage.
 
-The key choice per package:
-- **ObjC-compatible** (Firebase, Alamofire, etc.) → can use `exportToKotlin = true`, bridge file may be empty
-- **Pure Swift** (CryptoSwift, KeychainAccess, etc.) → must wrap in `@objcMembers` bridge class, no `exportToKotlin`
+The key choice per package — **always verify each dependency individually** using the detection steps in `references/exporting.md` § "Detecting ObjC Compatibility via the Modulemap". Never assume based on package name:
+- **Confirmed ObjC-compatible** (has `@interface` headers or `@objc`/`@objcMembers` on public `NSObject` subclasses) → `exportToKotlin = true`, bridge file may be empty
+- **Pure Swift** (no ObjC headers, no `@objc` on public types) → `exportToKotlin = false`, must wrap in `@objcMembers` bridge class
 
 ---
 

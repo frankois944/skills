@@ -4,8 +4,10 @@
 
 | Scenario | Approach |
 |---|---|
-| Package has an ObjC-compatible API (e.g., Firebase, Alamofire) | `exportToKotlin = true` — types appear directly in Kotlin |
-| Package is pure Swift (no ObjC headers) | Write a bridge wrapper with `@objcMembers` |
+| Package is confirmed ObjC-compatible (verified via modulemap/headers/`@objc`) | `exportToKotlin = true` — types appear directly in Kotlin |
+| Package is pure Swift (no ObjC headers, no `@objc` on public types) | `exportToKotlin = false` — write a bridge wrapper with `@objcMembers` |
+
+Every dependency must be checked individually — never assume compatibility based on package name.
 
 See **Detecting ObjC Compatibility via the Modulemap** below for how to determine which case applies before (or after) building.
 

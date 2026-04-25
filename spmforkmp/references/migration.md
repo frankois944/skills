@@ -157,7 +157,7 @@ The plugin looks for Swift files in `src/swift/[cinteropName]/`. Create the fold
 mkdir -p shared/src/swift/nativeBridge
 ```
 
-If you had Swift bridge code before, move it there. For ObjC-compatible packages like Firebase, the bridge file can be empty.
+If you had Swift bridge code before, move it there. For packages confirmed ObjC-compatible (verified via modulemap or `@objc`/`@objcMembers`), the bridge file can be empty.
 
 ## Mapping CocoaPods Concepts to spmForKmp
 
