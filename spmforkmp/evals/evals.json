@@ -1,0 +1,133 @@
+{
+  "skill_name": "spmforkmp",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a Kotlin Multiplatform project targeting iosArm64 and iosSimulatorArm64. I want to add the CryptoSwift Swift package (https://github.com/krzyzanowskim/CryptoSwift.git, version 1.8.4) and use its MD5 function from Kotlin. Show me the full setup: the build.gradle.kts config, the gradle.properties line I need, and the Swift bridge file.",
+      "expected_output": "build.gradle.kts with plugin applied and swiftPackageConfig using cinteropName, dependency block with remotePackageVersion for CryptoSwift, gradle.properties with enableCInteropCommonization=true, Swift file with @objcMembers public class CryptoSwiftBridge: NSObject exposing md5 method, Kotlin usage example.",
+      "assertions": [
+        {
+          "text": "Response includes cinteropName parameter in swiftPackageConfig",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response uses remotePackageVersion with CryptoSwift URL and version 1.8.4",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response includes kotlin.mpp.enableCInteropCommonization=true in gradle.properties",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Swift bridge file uses @objcMembers public class extending NSObject",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Bridge exposes an md5 or MD5 method callable from Kotlin",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response includes a Kotlin import and usage example",
+          "passed": null,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "We're migrating our shared KMP module from the Kotlin CocoaPods plugin to spmForKmp. Our current cocoapods block looks like this:\n\ncocoapods {\n    ios.deploymentTarget = \"15.0\"\n    pod(\"FirebaseCore\") { version = \"11.0.0\" }\n    pod(\"FirebaseMessaging\") { version = \"11.0.0\" }\n    pod(\"Amplitude-Swift\") { version = \"1.7.0\" }\n}\n\nFirebase products are ObjC-compatible and we need them exported to Kotlin. Amplitude is pure Swift so we only use it from the bridge. Give me the full migrated build.gradle.kts and the Xcode build phase script.",
+      "expected_output": "Migrated build.gradle.kts with spmForKmp plugin, swiftPackageConfig with cinteropName, Firebase products with exportToKotlin=true, Amplitude without exportToKotlin, correct minIos, Xcode run script. Mention that import statements change from cocoapods.FirebaseCore.FIRApp to FirebaseCore.FIRApp.",
+      "assertions": [
+        {
+          "text": "Response removes or replaces the kotlinCocoapods plugin with spmForKmp",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "FirebaseCore and FirebaseMessaging are configured with exportToKotlin = true",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Amplitude-Swift is added WITHOUT exportToKotlin (bridge-only)",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "minIos is set to 15.0 matching the original deployment target",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response includes the Xcode build phase run script (embedAndSignAppleFrameworkForXcode)",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response mentions that Kotlin import statements change (removing cocoapods. prefix)",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response includes kotlin.mpp.enableCInteropCommonization=true",
+          "passed": null,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I'm getting this error in my KMP iOS project: 'Undefined symbol: _OBJC_CLASS_$_FIRAnalytics'. I'm using spmForKmp with FirebaseAnalytics exported to Kotlin. How do I fix this?",
+      "expected_output": "Explanation that the native dependency needs to be added to Xcode. Solution using exportedPackageSettings { includeProduct = listOf(\"FirebaseAnalytics\") }, explanation of the generated local package, steps to add it to Xcode project.",
+      "assertions": [
+        {
+          "text": "Response correctly identifies the cause as missing native linking in Xcode",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response mentions exportedPackageSettings with includeProduct configuration",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response explains the generated local package and how to add it to Xcode",
+          "passed": null,
+          "evidence": ""
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I added KeychainAccess (https://github.com/kishikawakatsumi/KeychainAccess.git, branch master) to my spmForKmp config and tried to use it from Kotlin with exportToKotlin = true, but I only see SWIFT_TYPEDEFS in my Kotlin code. What's going on and how do I actually use it?",
+      "expected_output": "Explanation that KeychainAccess is a pure Swift package with no ObjC interface. Instruction to remove exportToKotlin=true and instead write an @objcMembers Swift bridge class wrapping KeychainAccess. Include example Swift bridge code and Kotlin usage.",
+      "assertions": [
+        {
+          "text": "Response correctly explains that KeychainAccess is pure Swift with no ObjC interface",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response says to remove exportToKotlin = true",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response provides a Swift bridge wrapper example using @objcMembers public class",
+          "passed": null,
+          "evidence": ""
+        },
+        {
+          "text": "Response includes a Kotlin usage example calling the bridge",
+          "passed": null,
+          "evidence": ""
+        }
+      ]
+    }
+  ]
+}
