@@ -72,7 +72,8 @@ kotlin {
                     url = uri("https://github.com/firebase/firebase-ios-sdk.git"),
                     version = libs.versions.firebaseIOS.get(),
                     products = {
-                        add("FirebaseCore", "FirebaseAnalytics", exportToKotlin = true)
+                        add("FirebaseCore", exportToKotlin = true)      // verified: has ObjC headers
+                        add("FirebaseAnalytics", exportToKotlin = true) // verified: has ObjC headers
                     },
                 )
                 remotePackageVersion(

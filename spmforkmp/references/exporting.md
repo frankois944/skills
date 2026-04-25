@@ -157,9 +157,9 @@ target.swiftPackageConfig("nativeBridge") {
             url = uri("https://github.com/firebase/firebase-ios-sdk.git"),
             version = "11.8.0",
             products = {
-                add("FirebaseAnalytics", exportToKotlin = true)
-                add("FirebaseCore", exportToKotlin = true)
-                add("FirebaseMessaging", exportToKotlin = true)
+                add("FirebaseAnalytics", exportToKotlin = true)  // verified: has ObjC headers
+                add("FirebaseCore", exportToKotlin = true)       // verified: has ObjC headers
+                add("FirebaseMessaging", exportToKotlin = true)  // verified: has ObjC headers
             },
         )
     }

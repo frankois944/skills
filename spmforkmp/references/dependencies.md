@@ -71,11 +71,7 @@ import nativeBridge.CryptoSwiftBridge
 val hash = CryptoSwiftBridge().md5(of = "hello")
 ```
 
-> **ObjC-compatible package?** Use `exportToKotlin = true` and leave the bridge file empty:
-> ```kotlin
-> add("FirebaseAnalytics", exportToKotlin = true)
-> ```
-> See `references/exporting.md` for the complete export recipe.
+> Before setting `exportToKotlin`, check this product's ObjC compatibility using the detection steps in `references/exporting.md` § "Detecting ObjC Compatibility via the Modulemap". Every product must be verified individually — there are no exceptions.
 
 ---
 
@@ -259,7 +255,7 @@ import VendorSDK
 }
 ```
 
-If it has ObjC headers, use `exportToKotlin = true` and leave the bridge file empty.
+If the modulemap check confirms ObjC headers are present, set `exportToKotlin = true` and leave the bridge file empty. Run the detection steps in `references/exporting.md` first — do not assume.
 
 ### Kotlin
 ```kotlin
@@ -320,8 +316,8 @@ target.swiftPackageConfig("nativeBridge") {
             url = uri("https://github.com/firebase/firebase-ios-sdk.git"),
             version = "11.8.0",
             products = {
-                add("FirebaseCore", exportToKotlin = true)    // ObjC → export
-                add("FirebaseAnalytics", exportToKotlin = true)
+                add("FirebaseCore", exportToKotlin = true)      // verified: has ObjC headers in Sources/
+                add("FirebaseAnalytics", exportToKotlin = true) // verified: has ObjC headers in Sources/
             },
         )
         remotePackageVersion(
