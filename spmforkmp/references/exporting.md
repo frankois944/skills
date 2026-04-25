@@ -134,19 +134,24 @@ build/spmKmpPlugin/[cinteropName]/scratch/release/[Product].framework/Modules/mo
 
 Open that modulemap and follow the header reference. If the header is essentially empty (boilerplate only), the product has no ObjC interface and `exportToKotlin` won't yield useful Kotlin bindings.
 
+### When the check cannot be performed
+
+If the source or headers are inaccessible (private repo, closed-source binary with no readable modulemap, network unavailable), set `exportToKotlin = false`. Do not guess. The user can build first and then re-run the post-build check on the generated modulemap, or wrap the dependency in a bridge in the meantime.
+
 ### Quick reference
 
 | Signal | `exportToKotlin`? |
 |---|---|
-| `Sources/[Target]/include/*.h` with `@interface` blocks | ✅ yes |
-| Swift source has `@objcMembers public class … : NSObject` | ✅ yes |
-| Swift source has `@objc public func/var` on a public `NSObject` subclass | ✅ yes |
-| No `include/` folder, no `@objc`/`@objcMembers` on public types | ❌ no — bridge wrapper required |
-| `@objc` present but class doesn't inherit `NSObject` or isn't `public` | ❌ no — not bridgeable |
-| Only structs / enums / actors / Swift-only protocols | ❌ no — bridge wrapper required |
-| XCFramework modulemap: `umbrella header` pointing to ObjC headers | ✅ yes |
-| XCFramework header: only `@class` forward-declarations, no `@interface` | ❌ no |
-| Post-build header is nearly empty (Swift typedef stub) | ❌ no |
+| `Sources/[Target]/include/*.h` with `@interface` blocks | ✅ `true` |
+| Swift source has `@objcMembers public class … : NSObject` | ✅ `true` |
+| Swift source has `@objc public func/var` on a public `NSObject` subclass | ✅ `true` |
+| No `include/` folder, no `@objc`/`@objcMembers` on public types | ❌ `false` — bridge wrapper required |
+| `@objc` present but class doesn't inherit `NSObject` or isn't `public` | ❌ `false` — not bridgeable |
+| Only structs / enums / actors / Swift-only protocols | ❌ `false` — bridge wrapper required |
+| XCFramework modulemap: `umbrella header` pointing to ObjC headers | ✅ `true` |
+| XCFramework header: only `@class` forward-declarations, no `@interface` | ❌ `false` |
+| Post-build header is nearly empty (Swift typedef stub) | ❌ `false` |
+| Cannot access source or headers to check | ❌ `false` — check after build via generated modulemap |
 
 ## Export a Package to Kotlin
 
