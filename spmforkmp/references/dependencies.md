@@ -5,13 +5,23 @@ Each section below is a complete, self-contained recipe. Always produce: Gradle 
 For every dependency added, perform these two checks before writing the Gradle config:
 
 **Check 1 — Minimum OS version**
-Look up the package's minimum deployment target (usually in its `Package.swift` under `.platforms`). Then ensure `minIos`, `minMacos`, `minTvos`, or `minWatchos` in `swiftPackageConfig` is set to at least that version. Setting a lower value than the package requires will cause a build error. See `references/setup.md` § "Key swiftPackageConfig Options" for the properties and their defaults.
+Look up the package-level `.platforms` declaration at the top of its `Package.swift`. Raise each relevant `min*` property in `swiftPackageConfig` to match — only for the platforms your KMP module actually targets. Setting a lower value than the package requires causes a build error. The plugin defaults (`minIos = "12.0"`, `minMacos = "10.13"`, `minTvos = "12.0"`, `minWatchos = "4.0"`) are often too low for modern packages. See `references/setup.md` § "Key swiftPackageConfig Options".
 
 ```swift
-// Example: package declares minimum iOS 16
-.platforms: [.iOS(.v16)]
-// → set minIos = "16.0" (or higher) in swiftPackageConfig
+// Package.swift of the dependency — read the top-level platforms block
+platforms: [.iOS(.v15), .macOS(.v10_15), .tvOS(.v15), .watchOS(.v7)]
 ```
+```kotlin
+// → raise every platform your module targets
+target.swiftPackageConfig("nativeBridge") {
+    minIos = "15.0"     // raised: default 12.0 < required 15.0
+    minMacos = "10.15"  // raised: default 10.13 < required 10.15
+    minTvos = "15.0"    // raised: default 12.0 < required 15.0
+    minWatchos = "7.0"  // raised: default 4.0 < required 7.0
+}
+```
+
+If the package has no `.platforms` declaration, the defaults are safe to keep.
 
 **Check 2 — ObjC compatibility (`exportToKotlin`)**
 Run the detection steps in `references/exporting.md` § "Detecting ObjC Compatibility via the Modulemap". Never assume based on package name:
