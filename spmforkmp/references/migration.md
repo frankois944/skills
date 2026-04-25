@@ -79,7 +79,7 @@ kotlin {
                     url = uri("https://github.com/krzyzanowskim/CryptoSwift.git"),
                     version = "1.2.3",
                     products = {
-                        add("CryptoSwift")  // pure Swift, used in bridge only
+                        add("CryptoSwift", exportToKotlin = false)  // pure Swift → bridge only
                     },
                 )
             }
@@ -164,6 +164,6 @@ If you had Swift bridge code before, move it there. For ObjC-compatible packages
 | CocoaPods | spmForKmp |
 |---|---|
 | `pod("Name") { version = "x.y.z" }` | `remotePackageVersion(url = ..., version = "x.y.z", products = { add("Name") })` |
-| `pod("Name") { linkOnly = true }` | `add("Name")` without `exportToKotlin` |
+| `pod("Name") { linkOnly = true }` | `add("Name", exportToKotlin = false)` |
 | `ios.deploymentTarget = "16.0"` | `minIos = "16.0"` |
 | Import prefix `cocoapods.FirebaseCore.FIRApp` | `FirebaseCore.FIRApp` (or use `packageDependencyPrefix`) |

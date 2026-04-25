@@ -40,7 +40,7 @@ kotlin {
                     url = uri("https://github.com/krzyzanowskim/CryptoSwift.git"),
                     version = "1.8.4",
                     products = {
-                        add("CryptoSwift")  // pure Swift → bridge only, no exportToKotlin
+                        add("CryptoSwift", exportToKotlin = false)  // pure Swift → bridge only
                     },
                 )
             }
@@ -96,7 +96,7 @@ kotlin {
                     url = uri("https://github.com/kishikawakatsumi/KeychainAccess.git"),
                     branch = "master",
                     products = {
-                        add("KeychainAccess")  // pure Swift → bridge only
+                        add("KeychainAccess", exportToKotlin = false)  // pure Swift → bridge only
                     },
                 )
             }
@@ -161,7 +161,7 @@ kotlin {
                     url = uri("https://github.com/krzyzanowskim/CryptoSwift.git"),
                     revision = "729e01bc9b9dab466ac85f21fb9ee2bc1c61b258",
                     products = {
-                        add("CryptoSwift")
+                        add("CryptoSwift", exportToKotlin = false)  // pure Swift → bridge only
                     },
                 )
             }
@@ -191,7 +191,7 @@ kotlin {
                     path = "${rootDir}/LocalPackages/MyAnalytics",   // absolute path to the Swift package folder
                     packageName = "MyAnalytics",
                     products = {
-                        add("MyAnalytics")   // add exportToKotlin = true if ObjC-compatible
+                        add("MyAnalytics", exportToKotlin = false)  // set true only after confirming ObjC-compatible
                     },
                 )
             }
@@ -237,7 +237,7 @@ kotlin {
                 localBinary(
                     path = "${rootDir}/Frameworks/VendorSDK.xcframework",
                     packageName = "VendorSDK",
-                    // exportToKotlin = true  // only if it has ObjC headers
+                    exportToKotlin = false  // set true only after confirming ObjC headers via modulemap
                 )
             }
         }
@@ -287,7 +287,7 @@ kotlin {
                     url = uri("https://cdn.example.com/releases/VendorSDK-2.3.1.xcframework.zip"),
                     checksum = "abc123def456...",   // SHA-256 of the zip file
                     packageName = "VendorSDK",
-                    // exportToKotlin = true  // only if it has ObjC headers
+                    exportToKotlin = false  // set true only after confirming ObjC headers via modulemap
                 )
             }
         }
@@ -328,12 +328,13 @@ target.swiftPackageConfig("nativeBridge") {
             url = uri("https://github.com/krzyzanowskim/CryptoSwift.git"),
             version = "1.8.4",
             products = {
-                add("CryptoSwift")   // pure Swift → bridge only
+                add("CryptoSwift", exportToKotlin = false)   // pure Swift → bridge only
             },
         )
         localBinary(
             path = "${rootDir}/Frameworks/VendorSDK.xcframework",
             packageName = "VendorSDK",
+            exportToKotlin = false  // confirm ObjC-compatibility before changing
         )
     }
 }

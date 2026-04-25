@@ -37,7 +37,7 @@ The user wants to add a third-party Swift package. Pick the dependency type that
 | Local `.xcframework` | Local — binary | [`references/dependencies.md`](references/dependencies.md) § Local Binary |
 | Remote `.xcframework` zip | Remote — binary | [`references/dependencies.md`](references/dependencies.md) § Remote Binary |
 
-Also load [`references/exporting.md`](references/exporting.md) when the package is ObjC-compatible and the user wants to call it directly from Kotlin (not just from Swift).
+Always load [`references/exporting.md`](references/exporting.md) for Scenario B. For **every product** the user adds, you must determine its ObjC compatibility before writing the Gradle config — use the detection steps in § "Detecting ObjC Compatibility via the Modulemap". Set `exportToKotlin = true` or `exportToKotlin = false` accordingly. Never leave it unset.
 
 **Scenario C — Migrate from the KMP CocoaPods plugin**
 → Load [`references/migration.md`](references/migration.md). It contains the full before/after for Gradle, Xcode, and import statements.
@@ -48,7 +48,6 @@ Also load [`references/exporting.md`](references/exporting.md) when the package 
 |---|---|
 | Advanced interop patterns (enums, async/await, throws, struct wrapping) | [`references/interoperability.md`](references/interoperability.md) |
 | Troubleshoot build/link/runtime error | [`references/troubleshooting.md`](references/troubleshooting.md) |
-| Export ObjC package directly to Kotlin | [`references/exporting.md`](references/exporting.md) |
 
 ## Non-Negotiable Rules
 
@@ -64,4 +63,4 @@ Always apply these — they are the most common sources of user pain:
 
 5. **Kotlin 2.x requires opting into `ExperimentalForeignApi` at cinterop call sites.** The cleanest way is one line per target in Gradle: `target.compilerOptions.optIn.add("kotlinx.cinterop.ExperimentalForeignApi")`. Alternatively annotate individual Kotlin files with `@OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)`.
 
-6. **Don't export pure Swift packages with `exportToKotlin = true`.** Only ObjC-compatible packages produce useful bindings. Pure Swift packages produce only `SWIFT_TYPEDEFS` stubs. Use a bridge wrapper instead.
+6. **Always set `exportToKotlin` explicitly — never omit it.** Use `exportToKotlin = true` only for ObjC-compatible products; use `exportToKotlin = false` for all others. Pure Swift packages produce only `SWIFT_TYPEDEFS` stubs when exported — use a bridge wrapper instead. When unsure, follow the modulemap detection guide in [`references/exporting.md`](references/exporting.md) § "Detecting ObjC Compatibility via the Modulemap" — check for `@interface` declarations or `@objc`/`@objcMembers` on public `NSObject` subclasses before deciding.
