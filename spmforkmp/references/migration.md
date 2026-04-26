@@ -97,14 +97,20 @@ kotlin.mpp.enableCInteropCommonization=true
 
 ## 5. Xcode Changes
 
+**Always edit the existing `.xcodeproj` — never generate a new one.** The existing project contains signing configuration, capabilities, entitlements, and other settings that are hard to reconstruct. Make surgical edits to the existing `project.pbxproj` or use Xcode's UI; do not rewrite it from scratch.
+
 ### Remove CocoaPods integration
+
+Run `pod deintegrate` inside the iOS app folder, then delete `Podfile`, `Podfile.lock`, and the `.xcworkspace`:
 
 ```bash
 cd ios/  # your iOS app folder
 pod deintegrate
+rm -f Podfile Podfile.lock
+rm -rf *.xcworkspace
 ```
 
-You can also delete `Podfile`, `Podfile.lock`, and the `.xcworkspace` if you were using one.
+`pod deintegrate` removes all CocoaPods build phases, xcconfig references, and framework entries from the **existing** `project.pbxproj` in place, which is exactly what you want.
 
 ### Add a new Run Script build phase
 
@@ -115,11 +121,11 @@ In Xcode → your target → **Build Phases**:
 3. Paste:
 
 ```bash
-cd "$SRCROOT/../../"
+cd "$SRCROOT/../"
 ./gradlew :shared:embedAndSignAppleFrameworkForXcode
 ```
 
-Adjust the path to match your project structure (the `cd` path should reach the directory containing `gradlew`).
+Adjust the path to match your project structure (the `cd` path should reach the directory containing `gradlew`). `SRCROOT` is the directory that contains the `.xcodeproj` file; going one level up (`..`) typically reaches the project root where `gradlew` lives.
 
 ### Update Build Settings
 
@@ -127,6 +133,11 @@ Adjust the path to match your project structure (the `cd` path should reach the 
 |---|---|
 | **Other Linker Flags** | `-framework shared` |
 | **Framework Search Paths** | `$(SRCROOT)/../build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)` |
+| **Enable User Script Sandboxing** | `NO` |
+
+`ENABLE_USER_SCRIPT_SANDBOXING` **must be `NO`** for the Gradle run script phase. The script needs network access (to download SPM packages and Gradle dependencies) and write access to the build directory — both blocked by the sandbox. Without this setting, the build will silently fail or hang.
+
+> **Why not regenerate the project?** Rewriting `project.pbxproj` from scratch drops code-signing identities, provisioning profiles, capabilities (Push, Background Modes, etc.), custom build rules, and any other settings accumulated in the existing project. Always mutate the existing file.
 
 ## 6. Update Kotlin Import Statements
 
