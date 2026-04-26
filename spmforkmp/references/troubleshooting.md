@@ -26,6 +26,47 @@ A local Swift package has been generated at /path/to/the/local/package
 
 Add that local package to your Xcode project as a local package dependency. Once done, add `spmforkmp.hideLocalPackageMessage=true` to `gradle.properties` to suppress the message.
 
+**Adding the local package to `project.pbxproj` manually**
+
+When editing the pbxproj by hand, three entries are required. Using the generated package at `../google-maps/exportedNativeBridge` as an example:
+
+1. Define the local package reference object (any UUID):
+```
+/* Begin XCLocalSwiftPackageReference section */
+    AABBCC001122334455667701 /* XCLocalSwiftPackageReference "../google-maps/exportedNativeBridge" */ = {
+        isa = XCLocalSwiftPackageReference;
+        relativePath = ../google-maps/exportedNativeBridge;
+    };
+/* End XCLocalSwiftPackageReference section */
+```
+
+2. Add it to `packageReferences` inside `PBXProject` — **not** `localPackages` (that key is unrecognised by xcodebuild):
+```
+packageReferences = (
+    AABBCC001122334455667701 /* XCLocalSwiftPackageReference "../google-maps/exportedNativeBridge" */,
+);
+```
+
+3. Add the product dependency with a `package` back-reference, and link it in `PBXFrameworksBuildPhase`:
+```
+/* XCSwiftPackageProductDependency */
+AABBCC001122334455667702 /* exportedNativeBridge */ = {
+    isa = XCSwiftPackageProductDependency;
+    package = AABBCC001122334455667701 /* XCLocalSwiftPackageReference "..." */;
+    productName = exportedNativeBridge;
+};
+
+/* PBXBuildFile */
+AABBCC001122334455667703 /* exportedNativeBridge in Frameworks */ = {
+    isa = PBXBuildFile;
+    productRef = AABBCC001122334455667702 /* exportedNativeBridge */;
+};
+```
+
+Then add `AABBCC001122334455667702` to the target's `packageProductDependencies` and `AABBCC001122334455667703` to the `PBXFrameworksBuildPhase` files list.
+
+The `package` field on `XCSwiftPackageProductDependency` is mandatory — omitting it leaves the product orphaned and causes `Missing package product '...'` at build time.
+
 ---
 
 ## Only `SWIFT_TYPEDEFS` Visible in Kotlin After Export
