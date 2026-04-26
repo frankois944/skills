@@ -50,6 +50,14 @@ Remove `exportToKotlin = true` from the product — the package is bridge-only.
 
 ---
 
+## `error: unexpected binary name … Static libraries should be prefixed with lib`
+
+**Cause:** Xcode 26+ added a stricter naming validation for static libraries inside XCFrameworks. Some binary SDKs (e.g. GoogleMaps) ship a `GoogleMaps.a` instead of `libGoogleMaps.a`. The spmForKmp plugin prints `ERROR FOUND WHEN EXEC` and surfaces this message in its output.
+
+**This is a false error — ignore it.** The SPM build completes successfully despite the message, and the cinterop `.def` files are generated correctly. No action is needed.
+
+---
+
 ## `Module '_stddef' requires feature 'found_incompatible_headers'`
 
 **Cause:** Incompatibility between Kotlin ≤ 2.1.20 and Xcode ≥ 16.3 (iPhoneOS 18.4 SDK).
