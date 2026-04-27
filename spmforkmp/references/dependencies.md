@@ -410,3 +410,71 @@ target.swiftPackageConfig("nativeBridge") {
 The plugin generates a local Swift package at build time and prints its path. Add that package to your Xcode project as a local dependency.
 
 > This is also the fix for `Undefined symbol: _OBJC_CLASS_$_...` — see `references/troubleshooting.md`.
+
+---
+
+## Final Verification — Build and Launch After Adding a Dependency
+
+Every dependency addition changes the linked binary surface and must be verified end-to-end before the task is complete.
+
+**If the user has an Xcode project**, the task is not done until the app launches successfully on each Apple platform configured in `swiftPackageConfig`. Run the sequence below for each configured platform — skip platforms not declared. Stop at the first non-zero exit.
+
+**If the user has no Xcode project** (library-only module, no app target), confirm `./gradlew :<shared-module>:linkDebugFramework<Platform><Arch>` succeeds for each configured target, state the launch step is skipped, and explain why.
+
+### iOS / tvOS / watchOS (simulator)
+
+```bash
+# 1. Build the KMP framework — use the suffix matching your configured target:
+#   iOS:     linkDebugFrameworkIosSimulatorArm64
+#   tvOS:    linkDebugFrameworkTvosSimulatorArm64
+#   watchOS: linkDebugFrameworkWatchosSimulatorArm64
+./gradlew :<shared-module>:linkDebugFramework<Platform>SimulatorArm64
+
+# 2. Pick or boot a simulator for the target platform
+UDID=$(xcrun simctl list devices booted | grep -m1 -oE '[0-9A-F]{8}-[0-9A-F-]{27}')
+if [ -z "$UDID" ]; then
+  # iOS: grep -m1 "iPhone"   tvOS: grep -m1 "Apple TV"   watchOS: grep -m1 "Apple Watch"
+  UDID=$(xcrun simctl list devices available | grep -m1 "iPhone " | grep -oE '[0-9A-F]{8}-[0-9A-F-]{27}')
+  xcrun simctl boot "$UDID"
+fi
+echo "Using simulator: $UDID"
+
+# 3. Build the Xcode project (Gradle run-script phase fires automatically)
+xcodebuild \
+  -project iosApp/iosApp.xcodeproj \
+  -scheme iosApp \
+  -configuration Debug \
+  -destination "platform=iOS Simulator,id=$UDID" \
+  -derivedDataPath build/xcode \
+  build
+
+# 4. Locate the .app and its bundle id
+APP_PATH=$(find build/xcode/Build/Products -name "*.app" -not -path "*/PlugIns/*" | head -1)
+BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist")
+
+# 5. Install and launch — a non-zero PID means success
+xcrun simctl install "$UDID" "$APP_PATH"
+xcrun simctl launch "$UDID" "$BUNDLE_ID"
+
+# 6. Wait 10 seconds and screenshot to confirm stability
+sleep 10
+xcrun simctl io "$UDID" screenshot build/xcode/launch_verify.png
+```
+
+### macOS (no simulator)
+
+```bash
+./gradlew :<shared-module>:linkDebugFrameworkMacosArm64
+
+xcodebuild \
+  -project macosApp/macosApp.xcodeproj \
+  -scheme macosApp \
+  -configuration Debug \
+  -destination "platform=macOS" \
+  -derivedDataPath build/xcode \
+  build
+
+APP_PATH=$(find build/xcode/Build/Products -name "*.app" -not -path "*/PlugIns/*" | head -1)
+open "$APP_PATH"
+sleep 10
+```
