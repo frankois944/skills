@@ -36,30 +36,31 @@ Run the detection steps in `references/exporting.md` § "Detecting ObjC Compatib
 - **Confirmed ObjC-compatible** (has `@interface` headers or `@objc`/`@objcMembers` on public `NSObject` subclasses) → `exportToKotlin = true`, bridge file may be empty
 - **Pure Swift** (no ObjC headers, no `@objc` on public types) → `exportToKotlin = false`, must wrap in `@objcMembers` bridge class
 
-**Step 3 — Detect binary targets (required for every product, before writing Gradle)**
-Open the dependency's `Package.swift` and locate the target backing the product. If it is `.binaryTarget(name: "X", url: ..., checksum: ...)` or `.binaryTarget(name: "X", path: "X.xcframework")`, the product is **binary** and won't be linked into `libnativeBridge.a` automatically. You must add `exportedPackageSettings` to the same `swiftPackageConfig` block in this edit — not later.
+**Step 3 — Check whether the dependency needs Xcode-side linking**
+After the Gradle build, the plugin auto-detects static frameworks in the compiled output and generates a local Swift package for anything that needs Xcode linking — printing a `logger.error` message with the path. C/ObjC (`isCLang`) modules are always included automatically.
+
+Auto-detection is not 100% reliable. Binary XCFramework targets (`.binaryTarget(...)` in `Package.swift`) may be missed. If the product causes `Undefined symbol` at Xcode link time, add it explicitly so the plugin always includes it — regardless of what it detects:
 
 ```swift
-// Source target — backed into libnativeBridge.a, no Xcode wiring needed
+// Source target — may be auto-detected as static and included
 .target(name: "MyLib", ...)
 
-// Binary target — needs exportedPackageSettings + manual pbxproj wiring
+// Binary XCFramework — often missed by auto-detection; use includeProduct
 .binaryTarget(name: "GoogleMaps", path: "GoogleMaps/GoogleMaps.xcframework")
 ```
 
 ```kotlin
 target.swiftPackageConfig("nativeBridge") {
-    // Required for any product backed by a binary target
     exportedPackageSettings {
-        includeProduct = listOf("GoogleMaps")
+        includeProduct = listOf("GoogleMaps")  // explicit: don't rely on auto-detection for binary targets
     }
     dependency { ... }
 }
 ```
 
-After the next Gradle build, the plugin generates a local Swift package at `<module>/exportedNativeBridge/`. Wire it into the iOS app's `project.pbxproj` following rule 8 in `SKILL.md`. Common closed-source SDKs distributed as binary: GoogleMaps, FirebaseAnalytics (Crashlytics in some versions), Adyen, vendor SDKs shipped as `.xcframework` zips.
+After the Gradle build the plugin prints the generated local package path — add it to your Xcode project as a local package dependency (see rule 8 in `SKILL.md`). Common closed-source SDKs distributed as binary XCFrameworks: GoogleMaps, FirebaseAnalytics/Crashlytics (some versions), Adyen, vendor SDKs shipped as `.xcframework` zips.
 
-> Heuristic: if the package's GitHub repo distributes XCFrameworks (look at the release artifacts), it is almost certainly a binary target.
+> Heuristic: if the package's GitHub repo distributes XCFrameworks in its release artifacts, it's almost certainly a binary target — use `includeProduct` proactively.
 
 ---
 

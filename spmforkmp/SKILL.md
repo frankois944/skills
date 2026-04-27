@@ -86,17 +86,24 @@ Always apply these — they are the most common sources of user pain:
 
 7. **Always set `exportToKotlin` explicitly — never omit it.** For each product, run the detection steps in [`references/exporting.md`](references/exporting.md) § "Detecting ObjC Compatibility via the Modulemap" and set `exportToKotlin = true` only when the check confirms ObjC compatibility on the **direct target** backing the product. Transitive dependencies do not count — cinterop only sees the direct target's interface. If the check cannot be performed (inaccessible source, closed-source binary), set `exportToKotlin = false`. When in doubt, `false` is always the safe default.
 
-8. **Binary XCFramework dependencies require `exportedPackageSettings` and must be wired into Xcode manually.** Detection: look at the dependency's own `Package.swift` (or the `scratch/artifacts/<package>/<Product>/<Product>.xcframework/` path that appears in the plugin's `.def` files after a build) — the presence of `.binaryTarget(name: "X", ...)` or a `.xcframework` artifact means X is binary. Source packages (ObjC or Swift) are compiled into `libnativeBridge.a` and linked automatically; binary targets are not — their symbols will be undefined at Xcode link time.
+8. **Some dependencies must be added to Xcode as a local package — the plugin tells you which ones.** After each Gradle build, the plugin evaluates every dependency using three criteria and generates a local Swift package for those that need Xcode-side linking:
+   - **Always included**: C/ObjC modules (`isCLang`) are unconditionally added.
+   - **Explicitly included**: any product listed in `exportedPackageSettings { includeProduct = listOf("ProductName") }`.
+   - **Auto-detected**: the plugin scans compiled output dirs for static `.framework` files (reads `Info.plist`, calls `isDynamicLibrary`) and includes any static framework it finds. Detection is not 100% reliable — binary XCFrameworks in particular may be missed.
 
-   **Apply at config time, not at troubleshooting time.** Add `exportedPackageSettings { includeProduct = listOf("ProductName") }` to the `swiftPackageConfig` block in the same edit that adds the dependency. After the Gradle build, a local Swift package is generated (the plugin prints its path, typically `<module>/exportedNativeBridge`). Wire it into `project.pbxproj` — the five edits required:
+   When the local package is generated and `hideLocalPackageMessage` is false, the plugin prints a `logger.error` message (always visible, even without `--info`):
+   ```
+   Spm4Kmp: The following dependencies [ProductName] need to be added to your xcode project
+   A local Swift package has been generated at /path/to/exportedNativeBridge
+   Please add it to your xcode project as a local package dependency
+   ```
+   Add that generated package to your Xcode project as a **local package dependency** (File → Add Package Dependencies → Add Local… in Xcode). Once added, set `spmforkmp.hideLocalPackageMessage=true` in `gradle.properties` to silence the message.
 
-   1. New `XCLocalSwiftPackageReference` section pointing at the local package's relative path.
-   2. New `XCSwiftPackageProductDependency` section with a **mandatory** `package = <local-ref-UUID>` field. Omitting `package` orphans the product and causes `Missing package product '...'`.
-   3. New `PBXBuildFile` entry referencing the product dependency via `productRef`.
-   4. Add the local-ref UUID to `packageReferences` inside `PBXProject` — **never** `localPackages` (unrecognised by xcodebuild).
-   5. Add the product-dep UUID to the target's `packageProductDependencies` AND the build-file UUID to the target's `PBXFrameworksBuildPhase.files` list.
+   If a dependency is NOT auto-detected and causes `Undefined symbol` at Xcode link time, add it explicitly: `exportedPackageSettings { includeProduct = listOf("ProductName") }` in the same `swiftPackageConfig` block, then rebuild.
 
-   Always run `xcodebuild -resolvePackageDependencies -project …` **before** `xcodebuild … build`. Building without resolving first fails with `Missing package product` even when the pbxproj is correct.
+   Always run `xcodebuild -resolvePackageDependencies -project …` **before** `xcodebuild … build` after adding the local package. Building without resolving first fails with `Missing package product` even when the project is correctly configured.
+
+   For manual `project.pbxproj` editing (CI or no Xcode UI), see `references/troubleshooting.md` § "Undefined symbol".
 
 9. **A migration is not complete until `xcrun simctl launch` returns a PID.** This is the definition of done for every spmForKmp task — see the "Definition of Done" section at the top of this file. Gradle success only proves the bridge compiles; the Xcode build proves linking and embedding; the simulator launch proves the framework loads at runtime with no missing symbols. Run the full sequence in [`references/migration.md`](references/migration.md) § "Final Verification" — `xcodebuild build` against the `.xcodeproj` (never the deleted `.xcworkspace`) on the first available iPhone simulator, then `simctl install` + `simctl launch`. If any step fails or you cannot run the simulator, do **not** report success — keep debugging or surface the unverified status explicitly.
 
