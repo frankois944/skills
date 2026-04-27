@@ -203,6 +203,8 @@ A migration is not done until the app builds in Xcode AND boots on a simulator. 
 ### Verification flow
 
 ```bash
+set -o pipefail  # propagate xcodebuild exit code through the pipe
+
 # 1. Build the KMP framework end-to-end (sanity check before Xcode)
 ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
 
@@ -221,18 +223,29 @@ xcodebuild \
   -configuration Debug \
   -destination "platform=iOS Simulator,id=$UDID" \
   -derivedDataPath build/xcode \
-  build
+  build 2>&1 | tail -n 50
 
 # 4. Locate the .app and its bundle id
-APP_PATH=$(find build/xcode/Build/Products -name "*.app" -not -path "*/PlugIns/*" | head -1)
+APP_PATH=$(find build/xcode/Build/Products/Debug-iphonesimulator -maxdepth 1 -name "*.app" | head -1)
 BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist")
 
-# 5. Install and launch
+# 5. Install and launch — capture the PID
 xcrun simctl install "$UDID" "$APP_PATH"
-xcrun simctl launch "$UDID" "$BUNDLE_ID"
+LAUNCH_OUTPUT=$(xcrun simctl launch "$UDID" "$BUNDLE_ID")
+APP_PID=$(echo "$LAUNCH_OUTPUT" | grep -oE '[0-9]+$')
+echo "Launched with PID: $APP_PID"
 
-# 6. Check runtime stability
-Wait 10 seconds to detect runtime issues, also take a screenshot to proof the app is running fine, if no issue so the migration is done.
+# 6. Verify the app is still running after 10 seconds
+sleep 10
+if kill -0 "$APP_PID" 2>/dev/null; then
+  echo "App is running — verification passed"
+else
+  echo "App crashed after launch — verification FAILED" >&2
+  exit 1
+fi
+
+# 7. screenshot
+xcrun simctl io "$UDID" screenshot build/xcode/launch_verify.png
 ```
 
 A clean `simctl launch` that returns a PID is the success signal. If it crashes or `xcodebuild` fails, the most common causes:

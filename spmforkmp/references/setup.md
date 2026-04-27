@@ -433,7 +433,7 @@ The plugin generates a local Swift package at build time inside the Kotlin modul
 4. Click **Add Local…** and navigate to `<module>/exported<BridgeName>/`
 5. Click **Add Package**
 
-Then run `xcodebuild -resolvePackageDependencies -project <your>.xcodeproj` before the next build.
+Then run `xcodebuild -resolvePackageDependencies -project <your>.xcodeproj | tail -n 50` before the next build.
 
 Once added, set `spmforkmp.hideLocalPackageMessage=true` in `gradle.properties` to silence the plugin message.
 
@@ -454,6 +454,8 @@ Once added, set `spmforkmp.hideLocalPackageMessage=true` in `gradle.properties` 
 ### iOS / tvOS / watchOS (simulator)
 
 ```bash
+set -o pipefail  # propagate xcodebuild exit code through the pipe
+
 # 1. Build the KMP framework — use the suffix matching your configured target:
 #   iOS:     linkDebugFrameworkIosSimulatorArm64
 #   tvOS:    linkDebugFrameworkTvosSimulatorArm64
@@ -476,18 +478,27 @@ xcodebuild \
   -configuration Debug \
   -destination "platform=iOS Simulator,id=$UDID" \
   -derivedDataPath build/xcode \
-  build
+  build 2>&1 | tail -n 50
 
 # 4. Locate the .app and its bundle id
-APP_PATH=$(find build/xcode/Build/Products -name "*.app" -not -path "*/PlugIns/*" | head -1)
+APP_PATH=$(find build/xcode/Build/Products/Debug-iphonesimulator -maxdepth 1 -name "*.app" | head -1)
 BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist")
 
-# 5. Install and launch — a non-zero PID means success
+# 5. Install and launch — capture the PID
 xcrun simctl install "$UDID" "$APP_PATH"
-xcrun simctl launch "$UDID" "$BUNDLE_ID"
+LAUNCH_OUTPUT=$(xcrun simctl launch "$UDID" "$BUNDLE_ID")
+APP_PID=$(echo "$LAUNCH_OUTPUT" | grep -oE '[0-9]+$')
+echo "Launched with PID: $APP_PID"
 
-# 6. Wait 10 seconds and screenshot to confirm stability
+# 6. Verify the app is still running after 10 seconds
 sleep 10
+if kill -0 "$APP_PID" 2>/dev/null; then
+  echo "App is running — verification passed"
+else
+  echo "App crashed after launch — verification FAILED" >&2
+  exit 1
+fi
+# 7. screenshot
 xcrun simctl io "$UDID" screenshot build/xcode/launch_verify.png
 ```
 
@@ -502,7 +513,7 @@ xcodebuild \
   -configuration Debug \
   -destination "platform=macOS" \
   -derivedDataPath build/xcode \
-  build
+  build | tail -n 50
 
 APP_PATH=$(find build/xcode/Build/Products -name "*.app" -not -path "*/PlugIns/*" | head -1)
 open "$APP_PATH"

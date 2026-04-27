@@ -69,7 +69,7 @@ puts "Done — run xcodebuild -resolvePackageDependencies before building"
 
 ```bash
 ruby add_local_package.rb
-xcodebuild -resolvePackageDependencies -project iosApp/iosApp.xcodeproj
+xcodebuild -resolvePackageDependencies -project iosApp/iosApp.xcodeproj | tail -n 50
 ```
 
 Adjust `PKG_PATH` and `PKG_NAME` to match your bridge name (e.g. bridge `nativeIosBridge` → `exportedNativeIosBridge`).

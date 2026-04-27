@@ -2,7 +2,7 @@
 name: spmforkmp
 license: MIT
 metadata:
-  version: 1.0.9
+  version: 1.1.0
   last_updated: 2026-04-27
 compatibility: Works with any Agent Skills compatible environment (Junie, Claude Code, Cursor, etc.).
 description: >
@@ -108,7 +108,7 @@ Always apply these — they are the most common sources of user pain:
 
    If a dependency is NOT auto-detected and causes `Undefined symbol` at Xcode link time, add it explicitly: `exportedPackageSettings { includeProduct = listOf("ProductName") }` in the same `swiftPackageConfig` block, then rebuild.
 
-   Always run `xcodebuild -resolvePackageDependencies -project …` **before** `xcodebuild … build` after adding the local package. Building without resolving first fails with `Missing package product` even when the project is correctly configured.
+   Always run `xcodebuild -resolvePackageDependencies -project … | tail -n 50` **before** `xcodebuild … build | tail -n 50` after adding the local package. Building without resolving first fails with `Missing package product` even when the project is correctly configured.
 
    For manual `project.pbxproj` editing (CI or no Xcode UI), see `references/troubleshooting.md` § "Undefined symbol".
 
