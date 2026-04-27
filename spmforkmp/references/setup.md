@@ -423,7 +423,21 @@ target.swiftPackageConfig("nativeBridge") {
 }
 ```
 
-The plugin generates a local Swift package at build time inside the Kotlin module directory (next to `build.gradle.kts`), at `<module>/exported<BridgeName>/` — e.g. `shared/exportedNativeBridge/`. Add that package to your Xcode project as a local dependency.
+The plugin generates a local Swift package at build time inside the Kotlin module directory (next to `build.gradle.kts`), at `<module>/exported<BridgeName>/` — e.g. `shared/exportedNativeBridge/`.
+
+**Adding the package in Xcode (recommended):**
+
+1. Open your `.xcodeproj` in Xcode
+2. Select the project root in the navigator → select your app target
+3. **Package Dependencies** tab → click **+**
+4. Click **Add Local…** and navigate to `<module>/exported<BridgeName>/`
+5. Click **Add Package**
+
+Then run `xcodebuild -resolvePackageDependencies -project <your>.xcodeproj` before the next build.
+
+Once added, set `spmforkmp.hideLocalPackageMessage=true` in `gradle.properties` to silence the plugin message.
+
+> For CI or scripted environments without Xcode UI, see `references/troubleshooting.md` § "Undefined symbol".
 
 > This is also the fix for `Undefined symbol: _OBJC_CLASS_$_...` — see `references/troubleshooting.md`.
 

@@ -26,46 +26,53 @@ A local Swift package has been generated at <module>/exported<BridgeName>
 
 Add that local package to your Xcode project as a local package dependency. Once done, add `spmforkmp.hideLocalPackageMessage=true` to `gradle.properties` to suppress the message.
 
-**Adding the local package to `project.pbxproj` manually**
+**Adding the local package programmatically (CI / no Xcode UI)**
 
-When editing the pbxproj by hand, three entries are required. Using the generated package at `../google-maps/exportedNativeBridge` as an example:
+Use the `xcodeproj` Ruby gem — it modifies `project.pbxproj` safely without manual UUID juggling:
 
-1. Define the local package reference object (any UUID):
-```
-/* Begin XCLocalSwiftPackageReference section */
-    AABBCC001122334455667701 /* XCLocalSwiftPackageReference "../google-maps/exportedNativeBridge" */ = {
-        isa = XCLocalSwiftPackageReference;
-        relativePath = ../google-maps/exportedNativeBridge;
-    };
-/* End XCLocalSwiftPackageReference section */
+```bash
+gem install xcodeproj
 ```
 
-2. Add it to `packageReferences` inside `PBXProject` — **not** `localPackages` (that key is unrecognised by xcodebuild):
-```
-packageReferences = (
-    AABBCC001122334455667701 /* XCLocalSwiftPackageReference "../google-maps/exportedNativeBridge" */,
-);
+```ruby
+# add_local_package.rb
+# Usage: ruby add_local_package.rb
+require 'xcodeproj'
+
+PROJECT   = 'iosApp/iosApp.xcodeproj'   # path to your .xcodeproj
+TARGET    = 'iosApp'                      # app target name
+PKG_PATH  = '../shared/exportedNativeBridge'  # relative path from .xcodeproj to the generated package
+PKG_NAME  = 'exportedNativeBridge'            # must match the bridge name with "exported" prefix
+
+project = Xcodeproj::Project.open(PROJECT)
+target  = project.targets.find { |t| t.name == TARGET }
+
+# Skip if already added
+unless project.root_object.package_references.any? { |r| r.relative_path == PKG_PATH }
+  ref = project.new(Xcodeproj::Project::Object::XCLocalSwiftPackageReference)
+  ref.relative_path = PKG_PATH
+  project.root_object.package_references << ref
+
+  dep = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
+  dep.package      = ref
+  dep.product_name = PKG_NAME
+  target.package_product_dependencies << dep
+
+  file = project.new(Xcodeproj::Project::Object::PBXBuildFile)
+  file.product_ref = dep
+  target.frameworks_build_phase.files << file
+end
+
+project.save
+puts "Done — run xcodebuild -resolvePackageDependencies before building"
 ```
 
-3. Add the product dependency with a `package` back-reference, and link it in `PBXFrameworksBuildPhase`:
-```
-/* XCSwiftPackageProductDependency */
-AABBCC001122334455667702 /* exportedNativeBridge */ = {
-    isa = XCSwiftPackageProductDependency;
-    package = AABBCC001122334455667701 /* XCLocalSwiftPackageReference "..." */;
-    productName = exportedNativeBridge;
-};
-
-/* PBXBuildFile */
-AABBCC001122334455667703 /* exportedNativeBridge in Frameworks */ = {
-    isa = PBXBuildFile;
-    productRef = AABBCC001122334455667702 /* exportedNativeBridge */;
-};
+```bash
+ruby add_local_package.rb
+xcodebuild -resolvePackageDependencies -project iosApp/iosApp.xcodeproj
 ```
 
-Then add `AABBCC001122334455667702` to the target's `packageProductDependencies` and `AABBCC001122334455667703` to the `PBXFrameworksBuildPhase` files list.
-
-The `package` field on `XCSwiftPackageProductDependency` is mandatory — omitting it leaves the product orphaned and causes `Missing package product '...'` at build time.
+Adjust `PKG_PATH` and `PKG_NAME` to match your bridge name (e.g. bridge `nativeIosBridge` → `exportedNativeIosBridge`).
 
 ---
 
