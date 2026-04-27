@@ -162,6 +162,8 @@ Keep that file (and don't add a `.gitkeep`) and the empty-target issue never app
 
 Each section below is a complete, self-contained recipe. Always produce: Gradle config + Kotlin usage. Only produce Swift bridge code if the user explicitly asks for it.
 
+**After completing any dependency integration, § 8 Final Verification is mandatory — do not skip it.**
+
 For every dependency added, these three steps are **mandatory** before writing any Gradle config. Do not skip them.
 
 **Step 1 — Update the minimum OS version (required for every new dependency or product)**
@@ -424,6 +426,8 @@ target.swiftPackageConfig("nativeBridge") {
 The plugin generates a local Swift package at build time inside the Kotlin module directory (next to `build.gradle.kts`), at `<module>/exported<BridgeName>/` — e.g. `shared/exportedNativeBridge/`. Add that package to your Xcode project as a local dependency.
 
 > This is also the fix for `Undefined symbol: _OBJC_CLASS_$_...` — see `references/troubleshooting.md`.
+
+**Dependency configured? Proceed immediately to § 8 Final Verification — this step is mandatory for every dependency addition.**
 
 ---
 

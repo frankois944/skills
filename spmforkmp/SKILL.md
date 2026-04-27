@@ -2,7 +2,7 @@
 name: spmforkmp
 license: MIT
 metadata:
-  version: 1.0.7
+  version: 1.0.8
   last_updated: 2026-04-27
 compatibility: Works with any Agent Skills compatible environment (Junie, Claude Code, Cursor, etc.).
 description: >
