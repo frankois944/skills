@@ -158,7 +158,9 @@ This is also what the auto-generated `StartYourBridgeHere.swift` is doing for yo
 
 ## 7. Final Verification — Build and Launch
 
-**Setup is not complete until the app launches successfully on each Apple platform the user has configured in `swiftPackageConfig`.** Run the sequence below only for the platforms present in the user's config — skip any platform not declared. Gradle BUILD SUCCESSFUL only proves the bridge compiles; Xcode build proves linking; launch proves the framework loads at runtime. Stop at the first non-zero exit.
+**If the user has an Xcode project**, setup is not complete until the app launches successfully on each Apple platform configured in `swiftPackageConfig`. Run the sequence below only for the platforms present in the user's config — skip any platform not declared. Gradle BUILD SUCCESSFUL only proves the bridge compiles; Xcode build proves linking; launch proves the framework loads at runtime. Stop at the first non-zero exit.
+
+**If the user has no Xcode project** (library-only module, no app target), the simulator launch step does not apply — state this explicitly and confirm the `linkDebugFramework…` Gradle task succeeds as the definition of done.
 
 ### iOS / tvOS / watchOS (simulator)
 
