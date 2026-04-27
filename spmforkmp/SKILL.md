@@ -2,7 +2,7 @@
 name: spmforkmp
 license: MIT
 metadata:
-  version: 1.0.1
+  version: 1.0.2
   last_updated: 2026-04-27
 compatibility: Works with any Agent Skills compatible environment (Junie, Claude Code, Cursor, etc.).
 description: >
@@ -13,16 +13,18 @@ description: >
 
 ## Definition of Done — Read This First
 
-**A migration or new integration is NOT complete until `xcrun simctl launch` returns a PID for the app on a booted iPhone simulator.** This is a hard, blocking acceptance criterion — not a "nice to have" verification step. Gradle BUILD SUCCESSFUL is necessary but never sufficient.
+**Any task that adds or removes a native dependency or product is NOT complete until the app launches successfully on a simulator (or device if no simulator is available) for each target platform configured in `swiftPackageConfig` — if the user has an Xcode project.** This applies to migrations, new integrations, and any dependency change (add or remove). Gradle BUILD SUCCESSFUL is necessary but never sufficient.
 
-Concretely, before reporting success you must have observed, in this order:
+Concretely, before reporting success you must have observed, in this order, **for each Apple target platform declared in the KMP module** (iOS, macOS, tvOS, watchOS — only those actually configured):
 
-1. `./gradlew :<app-module>:linkDebugFrameworkIosSimulatorArm64` succeeds.
-2. `xcodebuild … build` against the iOS app's `.xcodeproj` (or the `.xcworkspace` if it's not CocoaPods-only) succeeds.
-3. `xcrun simctl install <UDID> <path>.app` succeeds.
-4. `xcrun simctl launch <UDID> <bundle-id>` returns a non-zero PID without an immediate crash.
+1. `./gradlew :<app-module>:linkDebugFramework<Platform><Arch>` succeeds — e.g. `linkDebugFrameworkIosSimulatorArm64`, `linkDebugFrameworkMacosArm64`, `linkDebugFrameworkTvosSimulatorArm64`, `linkDebugFrameworkWatchosSimulatorArm64`.
+2. `xcodebuild … build` against the app's `.xcodeproj` (or `.xcworkspace` if not CocoaPods-only) for the target platform succeeds.
+3. Launch the app on a **simulator** for the platform (preferred):
+   - iOS / tvOS / watchOS: `xcrun simctl install <UDID> <path>.app` then `xcrun simctl launch <UDID> <bundle-id>` — confirm a non-zero PID.
+   - macOS: run the `.app` directly — confirm it opens without an immediate crash.
+   - Use a real device only when no simulator is available for that platform.
 
-The full command sequence is in [`references/migration.md`](references/migration.md) § "Final Verification — Build and Launch on a Simulator". If any step fails, treat the migration as in-progress and continue debugging — do not declare success, do not summarize as "complete," do not stop until launch succeeds. If the user's environment genuinely cannot boot a simulator (e.g. CI without a Mac runner), say so explicitly and surface the unverified status — never silently elide the step.
+The full command sequence is in [`references/migration.md`](references/migration.md) § "Final Verification — Build and Launch on a Simulator". If any step fails, treat the task as in-progress and continue debugging — do not declare success, do not summarize as "complete," do not stop until launch succeeds. If the user's environment genuinely cannot boot a simulator (e.g. CI without a Mac runner), say so explicitly and surface the unverified status — never silently elide the step.
 
 ## What spmForKmp Does
 
@@ -61,7 +63,7 @@ Always load [`references/exporting.md`](references/exporting.md) and [`reference
 
 1. **Min OS** — look up the package's `.platforms` declaration in its `Package.swift` and raise `minIos`/`minMacos`/`minTvos`/`minWatchos` if the new requirement is higher than the current value.
 2. **ObjC compatibility** — run the modulemap detection in [`references/exporting.md`](references/exporting.md) and set `exportToKotlin = true` or `false`.
-3. **Target type (binary vs. source)** — open the dependency's `Package.swift` and check whether the target backing the product is `.binaryTarget(...)` (XCFramework, often used by closed-source vendor SDKs like GoogleMaps, Firebase Crashlytics, etc.). If yes, add `exportedPackageSettings { includeProduct = listOf("ProductName") }` to the same `swiftPackageConfig` block **and wire the auto-generated local Swift package into `project.pbxproj`**. See rule 8 for the pbxproj edits. Skipping this check at config time produces a green Gradle build that fails Xcode link with `Undefined symbol: _OBJC_CLASS_$_…` — caught only by rule 9's simulator launch, never by Gradle alone.
+3. **Target type (binary vs. source)** — open the dependency's `Package.swift` and check whether the target backing the product is `.binaryTarget(...)` (XCFramework, often used by closed-source vendor SDKs like GoogleMaps, Firebase Crashlytics, etc.). If yes, add `exportedPackageSettings { includeProduct = listOf("ProductName") }` to the same `swiftPackageConfig` block **and wire the auto-generated local Swift package into `project.pbxproj`**. See rule 8 for the pbxproj edits. Skipping this check at config time produces a green Gradle build that fails Xcode link with `Undefined symbol: _OBJC_CLASS_$_…` — caught only by rule 9's platform launch, never by Gradle alone.
 
 **Scenario C — Migrate from the KMP CocoaPods plugin**
 → Load [`references/migration.md`](references/migration.md). It contains the full before/after for Gradle, Xcode, and import statements.
@@ -110,6 +112,8 @@ Always apply these — they are the most common sources of user pain:
 
    For manual `project.pbxproj` editing (CI or no Xcode UI), see `references/troubleshooting.md` § "Undefined symbol".
 
-9. **A migration is not complete until `xcrun simctl launch` returns a PID.** This is the definition of done for every spmForKmp task — see the "Definition of Done" section at the top of this file. Gradle success only proves the bridge compiles; the Xcode build proves linking and embedding; the simulator launch proves the framework loads at runtime with no missing symbols. Run the full sequence in [`references/migration.md`](references/migration.md) § "Final Verification" — `xcodebuild build` against the `.xcodeproj` (or the `.xcworkspace` if it's not CocoaPods-only) on the first available iPhone simulator, then `simctl install` + `simctl launch`. If any step fails or you cannot run the simulator, do **not** report success — keep debugging or surface the unverified status explicitly.
+9. **A task is not complete until the app launches successfully on each configured Apple target platform.** This is the definition of done for every spmForKmp task — see the "Definition of Done" section at the top of this file. Gradle success only proves the bridge compiles; the Xcode build proves linking and embedding; the launch proves the framework loads at runtime with no missing symbols. Run the full sequence in [`references/migration.md`](references/migration.md) § "Final Verification" — `xcodebuild build` against the `.xcodeproj` (or the `.xcworkspace` if it's not CocoaPods-only) for each declared platform, then launch on a simulator (iOS/tvOS/watchOS) or run directly (macOS). If any step fails or you cannot run the target, do **not** report success — keep debugging or surface the unverified status explicitly.
 
    The bridge folder also needs at least one `.swift` file even when `exportToKotlin = true` for every product. Swift PM rejects an "empty" target with `target '<bridgeName>' referenced in product '<bridgeName>' is empty`, so a `.gitkeep` is not enough — drop in a one-line `Bridge.swift` containing `import Foundation`.
+
+10. **Adding or removing any native dependency or product requires a launch on each configured target platform — if the user has an Xcode project.** Every add or remove changes the linked binary surface: new symbols must resolve at runtime, removed symbols must not leave dangling references. For each platform present in `swiftPackageConfig` (`minIos`, `minMacos`, `minTvos`, `minWatchos`), run the app on a simulator first (`xcrun simctl launch <UDID> <bundle-id>`) and confirm a non-zero PID with no immediate crash. Use a real device only when no simulator is available for that platform (e.g. watchOS on older Xcode versions). If the user has no Xcode project (library-only, no app target), state that the launch step is skipped and why — never silently omit it.
