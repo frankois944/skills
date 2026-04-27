@@ -50,6 +50,9 @@ cp -r temp_skills/spmforkmp ~/.junie/skills/
 rm -rf temp_skills
 ```
 
+## Registry Support
+This repository includes a `skills-manifest.yaml` file, making it compatible with major agent skill registries and discovery tools.
+
 ## Contributing
 Feel free to open issues or pull requests to improve these skills.
 

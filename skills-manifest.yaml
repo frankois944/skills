@@ -1,0 +1,12 @@
+name: frankois944-skills
+description: A collection of professional agent skills for AI-powered coding assistants.
+homepage: https://github.com/frankois944/skills
+skills:
+  - name: spmforkmp
+    path: spmforkmp
+    description: >
+      Comprehensive support for the spmForKmp Gradle plugin.
+      Simplifies Swift Package Manager (SPM) integration in Kotlin Multiplatform projects.
+    version: 1.0.1
+    license: MIT
+    compatibility: Works with any Agent Skills compatible environment (Junie, Claude Code, Cursor, etc.).
