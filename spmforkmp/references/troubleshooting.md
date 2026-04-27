@@ -76,6 +76,27 @@ Adjust `PKG_PATH` and `PKG_NAME` to match your bridge name (e.g. bridge `nativeI
 
 ---
 
+## `unrecognized selector sent to instance` at Runtime
+
+**Symptom:** The app builds and links successfully but crashes at runtime with `unrecognized selector sent to instance` or `+[ClassName method]: unrecognized selector`.
+
+**Cause:** The dependency uses Objective-C categories defined in a static library. The Apple linker dead-strips categories that aren't directly referenced by symbol name, so they vanish from the final binary even though the build succeeds.
+
+**Fix:** Add `-ObjC` to the linker options for every Apple target in `build.gradle.kts`:
+
+```kotlin
+listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
+    target.binaries.all {
+        linkerOpts("-ObjC")
+    }
+    target.swiftPackageConfig("nativeBridge") { ... }
+}
+```
+
+This forces the linker to load all ObjC categories from static libraries, not just those reachable by direct symbol reference. Firebase is the most common package that requires this flag.
+
+---
+
 ## Only `SWIFT_TYPEDEFS` Visible in Kotlin After Export
 
 **Cause:** The package is pure Swift — it has no ObjC-compatible API. `exportToKotlin = true` produces empty stubs.
