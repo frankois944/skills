@@ -155,3 +155,75 @@ actual fun platformInfo(): String = MyBridge().appVersion()
 The first sync creates `src/swift/[cinteropName]/StartYourBridgeHere.swift` — a template with examples. Delete it once you add real code, or set `spmforkmp.disableStartupFile=true` in `gradle.properties` to prevent it from being generated. if no file inside the bridge, the plugin will generate a empty one during the build, so no need to create a dummy file.
 
 This is also what the auto-generated `StartYourBridgeHere.swift` is doing for you — keep that file (and don't add a `.gitkeep`) and the issue never appears. Only run into this when you've manually pre-created the folder structure (e.g. during a CocoaPods migration before the first Gradle sync).
+
+## 7. Final Verification — Build and Launch
+
+**Setup is not complete until the app launches successfully on each Apple platform the user has configured in `swiftPackageConfig`.** Run the sequence below only for the platforms present in the user's config — skip any platform not declared. Gradle BUILD SUCCESSFUL only proves the bridge compiles; Xcode build proves linking; launch proves the framework loads at runtime. Stop at the first non-zero exit.
+
+### iOS / tvOS / watchOS (simulator)
+
+```bash
+# 1. Build the KMP framework — use the suffix matching your configured target:
+#   iOS:     linkDebugFrameworkIosSimulatorArm64
+#   tvOS:    linkDebugFrameworkTvosSimulatorArm64
+#   watchOS: linkDebugFrameworkWatchosSimulatorArm64
+./gradlew :<shared-module>:linkDebugFramework<Platform>SimulatorArm64
+
+# 2. Pick or boot a simulator for the target platform
+UDID=$(xcrun simctl list devices booted | grep -m1 -oE '[0-9A-F]{8}-[0-9A-F-]{27}')
+if [ -z "$UDID" ]; then
+  # iOS: grep -m1 "iPhone"   tvOS: grep -m1 "Apple TV"   watchOS: grep -m1 "Apple Watch"
+  UDID=$(xcrun simctl list devices available | grep -m1 "iPhone " | grep -oE '[0-9A-F]{8}-[0-9A-F-]{27}')
+  xcrun simctl boot "$UDID"
+fi
+echo "Using simulator: $UDID"
+
+# 3. Build the Xcode project (Gradle run-script phase fires automatically)
+xcodebuild \
+  -project iosApp/iosApp.xcodeproj \
+  -scheme iosApp \
+  -configuration Debug \
+  -destination "platform=iOS Simulator,id=$UDID" \
+  -derivedDataPath build/xcode \
+  build
+
+# 4. Locate the .app and its bundle id
+APP_PATH=$(find build/xcode/Build/Products -name "*.app" -not -path "*/PlugIns/*" | head -1)
+BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/Info.plist")
+
+# 5. Install and launch — a non-zero PID means success
+xcrun simctl install "$UDID" "$APP_PATH"
+xcrun simctl launch "$UDID" "$BUNDLE_ID"
+
+# 6. Wait 10 seconds and screenshot to confirm stability
+sleep 10
+xcrun simctl io "$UDID" screenshot build/xcode/launch_verify.png
+```
+
+### macOS (no simulator)
+
+```bash
+# 1. Build the KMP framework
+./gradlew :<shared-module>:linkDebugFrameworkMacosArm64
+
+# 2. Build the Xcode project
+xcodebuild \
+  -project macosApp/macosApp.xcodeproj \
+  -scheme macosApp \
+  -configuration Debug \
+  -destination "platform=macOS" \
+  -derivedDataPath build/xcode \
+  build
+
+# 3. Run directly and confirm no immediate crash
+APP_PATH=$(find build/xcode/Build/Products -name "*.app" -not -path "*/PlugIns/*" | head -1)
+open "$APP_PATH"
+sleep 10
+```
+
+| Symptom | Likely cause |
+|---|---|
+| `target '<bridge>' referenced in product '<bridge>' is empty` | Bridge folder has no `.swift` file — keep `StartYourBridgeHere.swift` or add a one-line `import Foundation` file |
+| `framework not found <shared>` | `FRAMEWORK_SEARCH_PATHS` doesn't reach `<module>/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)` |
+| `Undefined symbol: _OBJC_CLASS_$_…` | Binary XCFramework not linked — see rule 8 in SKILL.md |
+| Sandbox / "Operation not permitted" in run-script phase | `ENABLE_USER_SCRIPT_SANDBOXING` still `YES` — set to `NO` |

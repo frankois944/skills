@@ -6,7 +6,7 @@ The Kotlin CocoaPods plugin (`org.jetbrains.kotlin.native.cocoapods`) is depreca
 
 ```toml
 [versions]
-spmForKmp = "1.9.0"   # check Gradle Plugin Portal for latest
+spmForKmp = "1.9.1"   # check Gradle Plugin Portal for latest
 
 [plugins]
 # Remove:
