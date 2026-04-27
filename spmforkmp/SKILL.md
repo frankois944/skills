@@ -2,7 +2,7 @@
 name: spmforkmp
 license: MIT
 metadata:
-  version: 1.0.6
+  version: 1.0.7
   last_updated: 2026-04-27
 compatibility: Works with any Agent Skills compatible environment (Junie, Claude Code, Cursor, etc.).
 description: >
@@ -52,14 +52,14 @@ The user wants to add a third-party Swift package. Pick the dependency type that
 
 | Source | Type | Load |
 |---|---|---|
-| Published GitHub/GitLab release tag | Remote — version | [`references/dependencies.md`](references/dependencies.md) § Remote Version |
-| Git branch (main, develop…) | Remote — branch | [`references/dependencies.md`](references/dependencies.md) § Remote Branch |
-| Specific git commit | Remote — commit | [`references/dependencies.md`](references/dependencies.md) § Remote Commit |
-| Local Swift package on disk | Local — source | [`references/dependencies.md`](references/dependencies.md) § Local Package |
-| Local `.xcframework` | Local — binary | [`references/dependencies.md`](references/dependencies.md) § Local Binary |
-| Remote `.xcframework` zip | Remote — binary | [`references/dependencies.md`](references/dependencies.md) § Remote Binary |
+| Published GitHub/GitLab release tag | Remote — version | [`references/setup.md`](references/setup.md) § Remote Version |
+| Git branch (main, develop…) | Remote — branch | [`references/setup.md`](references/setup.md) § Remote Branch |
+| Specific git commit | Remote — commit | [`references/setup.md`](references/setup.md) § Remote Commit |
+| Local Swift package on disk | Local — source | [`references/setup.md`](references/setup.md) § Local Package |
+| Local `.xcframework` | Local — binary | [`references/setup.md`](references/setup.md) § Local Binary |
+| Remote `.xcframework` zip | Remote — binary | [`references/setup.md`](references/setup.md) § Remote Binary |
 
-Always load [`references/exporting.md`](references/exporting.md) and [`references/dependencies.md`](references/dependencies.md) for Scenario B. For **every product** the user adds, perform three checks before writing the Gradle config — never skip any of them:
+Always load [`references/setup.md`](references/setup.md) and [`references/exporting.md`](references/exporting.md) for Scenario B. For **every product** the user adds, perform three checks before writing the Gradle config — never skip any of them:
 
 1. **Min OS** — look up the package's `.platforms` declaration in its `Package.swift` and raise `minIos`/`minMacos`/`minTvos`/`minWatchos` if the new requirement is higher than the current value.
 2. **ObjC compatibility** — run the modulemap detection in [`references/exporting.md`](references/exporting.md) and set `exportToKotlin = true` or `false`.
@@ -101,7 +101,7 @@ Always apply these — they are the most common sources of user pain:
    When the local package is generated and `hideLocalPackageMessage` is false, the plugin prints a `logger.error` message (always visible, even without `--info`):
    ```
    Spm4Kmp: The following dependencies [ProductName] need to be added to your xcode project
-   A local Swift package has been generated at /path/to/exportedNativeBridge
+   A local Swift package has been generated at <module>/exported<BridgeName>
    Please add it to your xcode project as a local package dependency
    ```
    Add that generated package to your Xcode project as a **local package dependency** (File → Add Package Dependencies → Add Local… in Xcode). Once added, set `spmforkmp.hideLocalPackageMessage=true` in `gradle.properties` to silence the message.

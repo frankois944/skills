@@ -21,7 +21,7 @@ target.swiftPackageConfig(cinteropName = "nativeBridge") {
 After building, the plugin prints:
 ```
 Spm4Kmp: The following dependencies [TheDependencyName] need to be added to your Xcode project.
-A local Swift package has been generated at /path/to/the/local/package
+A local Swift package has been generated at <module>/exported<BridgeName>
 ```
 
 Add that local package to your Xcode project as a local package dependency. Once done, add `spmforkmp.hideLocalPackageMessage=true` to `gradle.properties` to suppress the message.
