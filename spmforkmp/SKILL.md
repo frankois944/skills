@@ -6,6 +6,19 @@ description: >
   Trigger on any of these: configuring the spmForKmp plugin, adding Swift Package dependencies to a KMP project, writing Swift bridge code (`@objcMembers`) for Kotlin Multiplatform, migrating from `org.jetbrains.kotlin.native.cocoapods`, exporting Objective-C compatible packages to Kotlin (`exportToKotlin`), troubleshooting `Undefined symbol` or cinterop errors in KMP Apple targets, questions about `swiftPackageConfig {}`, Swift↔Kotlin interop, or anyone saying "spm4kmp", "spmForKmp", or "swift package" in a KMP/Kotlin Multiplatform context. Use this skill even if the user doesn't name the plugin explicitly — if they are trying to use a Swift library from Kotlin on an Apple platform, this skill applies.
 ---
 
+## Definition of Done — Read This First
+
+**A migration or new integration is NOT complete until `xcrun simctl launch` returns a PID for the app on a booted iPhone simulator.** This is a hard, blocking acceptance criterion — not a "nice to have" verification step. Gradle BUILD SUCCESSFUL is necessary but never sufficient.
+
+Concretely, before reporting success you must have observed, in this order:
+
+1. `./gradlew :<app-module>:linkDebugFrameworkIosSimulatorArm64` succeeds.
+2. `xcodebuild … build` against the iOS app's `.xcodeproj` (never a deleted `.xcworkspace`) succeeds.
+3. `xcrun simctl install <UDID> <path>.app` succeeds.
+4. `xcrun simctl launch <UDID> <bundle-id>` returns a non-zero PID without an immediate crash.
+
+The full command sequence is in [`references/migration.md`](references/migration.md) § "Final Verification — Build and Launch on a Simulator". If any step fails, treat the migration as in-progress and continue debugging — do not declare success, do not summarize as "complete," do not stop until launch succeeds. If the user's environment genuinely cannot boot a simulator (e.g. CI without a Mac runner), say so explicitly and surface the unverified status — never silently elide the step.
+
 ## What spmForKmp Does
 
 `spmForKmp` compiles Swift code and SPM packages into a `cinterop`-based bridge that Kotlin can call on Apple targets. It handles:
@@ -83,6 +96,6 @@ Always apply these — they are the most common sources of user pain:
 
    Always run `xcodebuild -resolvePackageDependencies -project …` **before** `xcodebuild … build`. Building without resolving first fails with `Missing package product` even when the pbxproj is correct.
 
-9. **A migration is not complete until the app builds in Xcode AND launches on a simulator.** Gradle success only proves the bridge compiles. The Xcode build proves linking and embedding work; the simulator launch proves the framework loads at runtime and there are no missing symbols. Always finish with the verification flow in [`references/migration.md`](references/migration.md) § "Final Verification" — `xcodebuild build` against the project (never the deleted `.xcworkspace`) on the first available iPhone simulator, then `simctl install` + `simctl launch`. If launch fails, do not report success.
+9. **A migration is not complete until `xcrun simctl launch` returns a PID.** This is the definition of done for every spmForKmp task — see the "Definition of Done" section at the top of this file. Gradle success only proves the bridge compiles; the Xcode build proves linking and embedding; the simulator launch proves the framework loads at runtime with no missing symbols. Run the full sequence in [`references/migration.md`](references/migration.md) § "Final Verification" — `xcodebuild build` against the `.xcodeproj` (never the deleted `.xcworkspace`) on the first available iPhone simulator, then `simctl install` + `simctl launch`. If any step fails or you cannot run the simulator, do **not** report success — keep debugging or surface the unverified status explicitly.
 
    The bridge folder also needs at least one `.swift` file even when `exportToKotlin = true` for every product. Swift PM rejects an "empty" target with `target '<bridgeName>' referenced in product '<bridgeName>' is empty`, so a `.gitkeep` is not enough — drop in a one-line `Bridge.swift` containing `import Foundation`.

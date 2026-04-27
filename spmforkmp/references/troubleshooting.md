@@ -93,9 +93,36 @@ Remove `exportToKotlin = true` from the product — the package is bridge-only.
 
 ## `error: unexpected binary name … Static libraries should be prefixed with lib`
 
-**Cause:** Xcode 26+ added a stricter naming validation for static libraries inside XCFrameworks. Some binary SDKs (e.g. GoogleMaps) ship a `GoogleMaps.a` instead of `libGoogleMaps.a`. The spmForKmp plugin prints `ERROR FOUND WHEN EXEC` and surfaces this message in its output.
+**Cause:** Xcode 26+ added stricter naming validation for static libraries inside XCFrameworks. Some binary SDKs (notably GoogleMaps `GoogleMaps_3p.xcframework`) ship a top-level `<Product>.a` instead of `lib<Product>.a`. The spmForKmp plugin prints `ERROR FOUND WHEN EXEC` and surfaces the message in its output.
 
-**This is a false error — ignore it.** The SPM build completes successfully despite the message, and the cinterop `.def` files are generated correctly. No action is needed.
+**The message alone is harmless** — for the simulator slice, SPM still produces a usable scratch directory and the next cinterop task succeeds.
+
+**But it commonly cascades on the device target** with:
+
+```
+error: XCFramework Info.plist not found at .../scratch/artifacts/<package>/<Product>/<Product>.xcframework
+```
+
+That second error happens because the simulator slice extraction aborted partway through and left an incomplete artifact tree. The device target then refuses to read it.
+
+**Fix when the device target fails:**
+
+1. Clear the partial fetch:
+   ```bash
+   rm -rf <module>/build/spmKmpPlugin
+   ```
+
+2. Build the targets one at a time (simulator first, then device), so each gets its own clean fetch:
+   ```bash
+   ./gradlew :<module>:SwiftPackageConfigAppleNativeBridgeCompileSwiftPackageIosSimulatorArm64
+   ./gradlew :<module>:SwiftPackageConfigAppleNativeBridgeCompileSwiftPackageIosArm64
+   ```
+
+3. If the device target still fails with `Info.plist not found`, the vendor's SPM package is unusable on this Xcode version. Two fallbacks:
+   - **Pin a different version.** Vendors often fix the binary layout in subsequent releases — bump the version one or two patches up or down.
+   - **Bypass the broken `Package.swift` with `remoteBinary` or `localBinary`.** Download the `.xcframework.zip` directly from the vendor (for GoogleMaps: `https://dl.google.com/geosdk/swiftpm/<version>/GoogleMaps_3p.xcframework.zip`) and reference it via `localBinary(...)` after unzipping, or `remoteBinary(url, checksum, ...)` to let SPM fetch and verify it. This skips the broken `Package.swift` entirely.
+
+> When you see `unexpected binary name`, check whether any *task* (not just a log line) failed. If only the message is present and the next task ran, ignore it. If a task FAILED with `Info.plist not found`, apply the cascade fix above.
 
 ---
 
