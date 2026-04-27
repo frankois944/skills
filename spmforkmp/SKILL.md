@@ -2,7 +2,7 @@
 name: spmforkmp
 license: MIT
 metadata:
-  version: 1.0.5
+  version: 1.0.6
   last_updated: 2026-04-27
 compatibility: Works with any Agent Skills compatible environment (Junie, Claude Code, Cursor, etc.).
 description: >
@@ -116,4 +116,6 @@ Always apply these — they are the most common sources of user pain:
 
    The bridge folder also needs at least one `.swift` file even when `exportToKotlin = true` for every product. Swift PM rejects an "empty" target with `target '<bridgeName>' referenced in product '<bridgeName>' is empty`, so a `.gitkeep` is not enough — drop in a one-line `Bridge.swift` containing `import Foundation`.
 
-10. **Adding or removing any native dependency or product requires a launch on each configured target platform — if the user has an Xcode project.** Every add or remove changes the linked binary surface: new symbols must resolve at runtime, removed symbols must not leave dangling references. For each platform present in `swiftPackageConfig` (`minIos`, `minMacos`, `minTvos`, `minWatchos`), run the app on a simulator first (`xcrun simctl launch <UDID> <bundle-id>`) and confirm a non-zero PID with no immediate crash. Use a real device only when no simulator is available for that platform (e.g. watchOS on older Xcode versions). If the user has no Xcode project (library-only, no app target), state that the launch step is skipped and why — never silently omit it.
+10. **Only generate Swift bridge code if the user explicitly asks for it.** Do not produce `src/swift/[bridgeName]/*.swift` content unless the user requests it — show the Gradle config and Kotlin usage only. When the bridge file is needed (pure Swift dependency that cannot be called directly), state that a bridge is required and ask the user what functionality they want exposed before writing any Swift.
+
+11. **Adding or removing any native dependency or product requires a launch on each configured target platform — if the user has an Xcode project.** Every add or remove changes the linked binary surface: new symbols must resolve at runtime, removed symbols must not leave dangling references. For each platform present in `swiftPackageConfig` (`minIos`, `minMacos`, `minTvos`, `minWatchos`), run the app on a simulator first (`xcrun simctl launch <UDID> <bundle-id>`) and confirm a non-zero PID with no immediate crash. Use a real device only when no simulator is available for that platform (e.g. watchOS on older Xcode versions). If the user has no Xcode project (library-only, no app target), state that the launch step is skipped and why — never silently omit it.
