@@ -6,7 +6,7 @@ The Kotlin CocoaPods plugin (`org.jetbrains.kotlin.native.cocoapods`) is depreca
 
 ```toml
 [versions]
-spmForKmp = "1.9.0"   # check Gradle Plugin Portal for latest
+spmForKmp = "1.9.1"   # check Gradle Plugin Portal for latest
 
 [plugins]
 # Remove:
@@ -178,7 +178,6 @@ A migration is not done until the app builds in Xcode AND boots on a simulator. 
 ### Pre-flight checklist (common gotchas)
 
 - **Audit every dependency for binary targets BEFORE the first `xcodebuild` run.** For each pod being migrated, open the SPM equivalent's `Package.swift` and look for `.binaryTarget(...)`. If any product is binary (very common for vendor SDKs — GoogleMaps, Firebase Crashlytics, Adyen, etc.), add `exportedPackageSettings { includeProduct = listOf(...) }` to its `swiftPackageConfig` block and wire the auto-generated `<module>/exportedNativeBridge/` into `project.pbxproj` following rule 8. Skipping this audit is the #1 cause of a "green Gradle, red Xcode" migration: the bridge `.a` compiles fine, but the iOS link step fails with `Undefined symbol: _OBJC_CLASS_$_<class>` and you only catch it at the simulator launch.
-- **Bridge folder has at least one real `.swift` file.** Swift PM rejects an empty target with `target '<bridgeName>' referenced in product '<bridgeName>' is empty`. A `.gitkeep` does not count. Drop in a one-line `Bridge.swift` with `import Foundation` for every module that declares `swiftPackageConfig`, even when every product uses `exportToKotlin = true`.
 - **No `.xcworkspace` left over.** It was deleted with CocoaPods — point `xcodebuild` at `iosApp/iosApp.xcodeproj`. Passing the workspace will fail because it still references the removed `Pods` project.
 - **`build/spmKmpPlugin/` cleared if a previous run failed mid-way.** Stale `scratch/artifacts/` from an aborted SPM fetch surfaces as `XCFramework Info.plist not found` or `unexpected binary name`. `rm -rf <module>/build/spmKmpPlugin` and re-run.
 - **`xcodebuild -resolvePackageDependencies` runs before `xcodebuild build`** if any binary product was added via `exportedPackageSettings`. Otherwise the build fails with `Missing package product` even when the pbxproj is correct.
@@ -213,6 +212,9 @@ BUNDLE_ID=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP_PATH/In
 # 5. Install and launch
 xcrun simctl install "$UDID" "$APP_PATH"
 xcrun simctl launch "$UDID" "$BUNDLE_ID"
+
+# 6. Check runtime stability
+Wait 10 seconds to detect runtime issues, also take a screenshot to proof the app is running fine, if no issue so the migration is done.
 ```
 
 A clean `simctl launch` that returns a PID is the success signal. If it crashes or `xcodebuild` fails, the most common causes:

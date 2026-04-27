@@ -172,7 +172,7 @@ import Foundation
     // Workaround: property forces cinterop to export ThrowError type to Kotlin
     public let bindThrowErrorTypeToKotlin: ThrowError = .noError
 
-    // Use untyped `throws` — typed throws are not yet bridgeable to ObjC
+    // Use untyped `throws` — typed throws (`throws(MyError)`) cause a compile error in Xcode 26.4+
     public func justThrowAnError() throws {
         throw ThrowError.error1
     }
@@ -434,6 +434,6 @@ println(wrapped.stringValue())          // "Hello"
 | Async functions | Bridge with `@objc(name:)` callback form; wrap in `suspendCoroutine` in Kotlin |
 | Throwing functions | Use `executeWithErrorHandling` helper; wraps `NSError**` → `SwiftException` |
 | Pure Swift structs | Wrap in an `@objcMembers class : NSObject` before exposing to Kotlin |
-| Typed throws | Not bridgeable to ObjC — use untyped `throws` in bridge code |
+| Typed throws | Not bridgeable to ObjC — use untyped `throws`; `throws(MyError)` is a compile error in Xcode 26.4+ |
 | `struct`, `actor`, `protocol` | Cannot cross the bridge — must be wrapped or re-exposed via a class |
 | Export type hint | If cinterop misses an enum/type, add a property of that type to a class: `public let bind: MyEnum = .default` |

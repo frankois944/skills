@@ -30,6 +30,8 @@ The full command sequence is in [`references/migration.md`](references/migration
 
 ## How to Help the User
 
+**Before writing any Gradle snippet**, fetch [plugins.gradle.org/plugin/io.github.frankois944.spmForKmp](https://plugins.gradle.org/plugin/io.github.frankois944.spmForKmp) to confirm the current plugin version and use that value in every code example. Never hard-code a version without verifying it first.
+
 Identify the scenario, load the relevant reference file(s), then produce complete Gradle config + Swift code + Kotlin usage. Always produce the full picture — don't give only a dependency snippet without showing how the bridge and Kotlin usage fit together.
 
 ### The Three Core Scenarios

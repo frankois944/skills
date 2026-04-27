@@ -78,7 +78,7 @@ import io.github.frankois944.spmForKmp.swiftPackageConfig
 
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
-    id("io.github.frankois944.spmForKmp") version "1.9.0"
+    id("io.github.frankois944.spmForKmp") version "1.9.1"
 }
 
 kotlin {

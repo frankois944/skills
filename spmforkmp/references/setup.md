@@ -14,7 +14,7 @@
 
 ```toml
 [versions]
-spmForKmp = "1.9.0"   # check Gradle Plugin Portal for latest
+spmForKmp = "1.9.1"   # check Gradle Plugin Portal for latest
 
 [plugins]
 spmForKmp = { id = "io.github.frankois944.spmForKmp", version.ref = "spmForKmp" }
@@ -43,7 +43,7 @@ plugins {
 import io.github.frankois944.spmForKmp.swiftPackageConfig
 
 plugins {
-    id("io.github.frankois944.spmForKmp") version "1.9.0"
+    id("io.github.frankois944.spmForKmp") version "1.9.1"
 }
 ```
 
