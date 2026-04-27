@@ -25,6 +25,13 @@ npx skills add frankois944/skills/spmforkmp
 npx skills add -g frankois944/skills/spmforkmp
 ```
 
+### Updating the Skill
+If you have already installed the skill, you can update it to the latest version by running:
+
+```bash
+npx skills update spmforkmp
+```
+
 ### Manual Installation for Junie
 
 **Project-level:**

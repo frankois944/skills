@@ -1,6 +1,9 @@
 ---
 name: spmforkmp
 license: MIT
+metadata:
+  version: 1.0.1
+  last_updated: 2026-04-27
 compatibility: Works with any Agent Skills compatible environment (Junie, Claude Code, Cursor, etc.).
 description: >
   Use this skill whenever working with the spmForKmp Gradle plugin (id: `io.github.frankois944.spmForKmp`) — a modern replacement for the deprecated Kotlin CocoaPods plugin for integrating Swift Package Manager (SPM) dependencies into Kotlin Multiplatform (KMP) projects targeting Apple platforms.
