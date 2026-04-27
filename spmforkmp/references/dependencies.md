@@ -2,7 +2,7 @@
 
 Each section below is a complete, self-contained recipe. Always produce: Gradle config + Swift bridge (or note it can be empty) + Kotlin usage.
 
-For every dependency added, these two steps are **mandatory** before writing any Gradle config. Do not skip them.
+For every dependency added, these three steps are **mandatory** before writing any Gradle config. Do not skip them.
 
 **Step 1 — Update the minimum OS version (required for every new dependency or product)**
 Each time a dependency or product is added, read its package-level `.platforms` declaration in `Package.swift` and update `minIos`, `minMacos`, `minTvos`, and `minWatchos` in `swiftPackageConfig` if the new requirement is higher than the current value. The configured minimum must always be the highest value required by any dependency in the block. Never assume the existing value is sufficient — each addition may raise the bar.
@@ -35,6 +35,31 @@ If the package has no `.platforms` declaration, the defaults are safe to keep.
 Run the detection steps in `references/exporting.md` § "Detecting ObjC Compatibility via the Modulemap". Never assume based on package name:
 - **Confirmed ObjC-compatible** (has `@interface` headers or `@objc`/`@objcMembers` on public `NSObject` subclasses) → `exportToKotlin = true`, bridge file may be empty
 - **Pure Swift** (no ObjC headers, no `@objc` on public types) → `exportToKotlin = false`, must wrap in `@objcMembers` bridge class
+
+**Step 3 — Detect binary targets (required for every product, before writing Gradle)**
+Open the dependency's `Package.swift` and locate the target backing the product. If it is `.binaryTarget(name: "X", url: ..., checksum: ...)` or `.binaryTarget(name: "X", path: "X.xcframework")`, the product is **binary** and won't be linked into `libnativeBridge.a` automatically. You must add `exportedPackageSettings` to the same `swiftPackageConfig` block in this edit — not later.
+
+```swift
+// Source target — backed into libnativeBridge.a, no Xcode wiring needed
+.target(name: "MyLib", ...)
+
+// Binary target — needs exportedPackageSettings + manual pbxproj wiring
+.binaryTarget(name: "GoogleMaps", path: "GoogleMaps/GoogleMaps.xcframework")
+```
+
+```kotlin
+target.swiftPackageConfig("nativeBridge") {
+    // Required for any product backed by a binary target
+    exportedPackageSettings {
+        includeProduct = listOf("GoogleMaps")
+    }
+    dependency { ... }
+}
+```
+
+After the next Gradle build, the plugin generates a local Swift package at `<module>/exportedNativeBridge/`. Wire it into the iOS app's `project.pbxproj` following rule 8 in `SKILL.md`. Common closed-source SDKs distributed as binary: GoogleMaps, FirebaseAnalytics (Crashlytics in some versions), Adyen, vendor SDKs shipped as `.xcframework` zips.
+
+> Heuristic: if the package's GitHub repo distributes XCFrameworks (look at the release artifacts), it is almost certainly a binary target.
 
 ---
 
