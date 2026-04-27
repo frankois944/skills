@@ -152,13 +152,6 @@ actual fun platformInfo(): String = MyBridge().appVersion()
 
 ## 6. After Setup
 
-The first sync creates `src/swift/[cinteropName]/StartYourBridgeHere.swift` — a template with examples. Delete it once you add real code, or set `spmforkmp.disableStartupFile=true` in `gradle.properties` to prevent it from being generated.
-
-**The bridge folder must always contain at least one real `.swift` file** — even when every product uses `exportToKotlin = true` and you have no bridge code to write. Swift Package Manager rejects a target with no source files: `target '<bridgeName>' referenced in product '<bridgeName>' is empty`. A `.gitkeep` does not count. If you commit the directory under version control without bridge code, drop in a one-line `Bridge.swift`:
-
-```swift
-// src/swift/<bridgeName>/Bridge.swift
-import Foundation
-```
+The first sync creates `src/swift/[cinteropName]/StartYourBridgeHere.swift` — a template with examples. Delete it once you add real code, or set `spmforkmp.disableStartupFile=true` in `gradle.properties` to prevent it from being generated. if no file inside the bridge, the plugin will generate a empty one during the build, so no need to create a dummy file.
 
 This is also what the auto-generated `StartYourBridgeHere.swift` is doing for you — keep that file (and don't add a `.gitkeep`) and the issue never appears. Only run into this when you've manually pre-created the folder structure (e.g. during a CocoaPods migration before the first Gradle sync).

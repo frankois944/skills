@@ -6,7 +6,7 @@ The Kotlin CocoaPods plugin (`org.jetbrains.kotlin.native.cocoapods`) is depreca
 
 ```toml
 [versions]
-spmForKmp = "1.9.1"   # check Gradle Plugin Portal for latest
+spmForKmp = "1.9.0"   # check Gradle Plugin Portal for latest
 
 [plugins]
 # Remove:
@@ -101,16 +101,35 @@ kotlin.mpp.enableCInteropCommonization=true
 
 ### Remove CocoaPods integration
 
-Run `pod deintegrate` inside the iOS app folder, then delete `Podfile`, `Podfile.lock`, and the `.xcworkspace`:
+To ensure a clean migration, you must remove CocoaPods from your existing Xcode project. **Use `pod deintegrate` in priority** as it is the cleanest and most reliable method for updating the `project.pbxproj` file in place.
+
+#### Option A: Using `pod deintegrate` (Recommended)
+
+Run this inside your iOS app folder:
 
 ```bash
 cd ios/  # your iOS app folder
 pod deintegrate
 rm -f Podfile Podfile.lock
-rm -rf *.xcworkspace
 ```
 
-`pod deintegrate` removes all CocoaPods build phases, xcconfig references, and framework entries from the **existing** `project.pbxproj` in place, which is exactly what you want.
+`pod deintegrate` removes all CocoaPods build phases, xcconfig references, and framework entries from the **existing** `project.pbxproj` in place. 
+
+> **About `.xcworkspace`**: If your `.xcworkspace` was created by CocoaPods (the most common case), you should delete it and open the `.xcodeproj` from now on. However, if you use the workspace for other projects or custom configurations, **keep it** and simply stop using the CocoaPods-generated schemes.
+
+#### Option B: Manual Removal (If `pod` command is unavailable)
+
+If you cannot run `pod deintegrate`, follow these steps to manually strip CocoaPods references from your `.xcodeproj`:
+
+1. **Delete files**: `rm -f Podfile Podfile.lock`. Delete the `.xcworkspace` **only if** it was used exclusively for CocoaPods.
+2. **Open `.xcodeproj`**: Use Xcode to open your project directly (or the workspace if you decided to keep it).
+3. **Remove Build Phases**: In your app target's **Build Phases**, delete any phase starting with `[CP]`, such as:
+    - `[CP] Check Pods Manifest.lock`
+    - `[CP] Copy Pods Resources`
+    - `[CP] Embed Pods Frameworks`
+4. **Remove Frameworks**: In **Build Phases** → **Link Binary With Libraries**, remove any `libPods-*.a` or `Pods_*.framework` entries.
+5. **Reset Configurations**: In the Project settings → **Info** tab → **Configurations**, set the "Based on Configuration File" setting to **None** for all targets and configurations.
+6. **Cleanup Search Paths**: In **Build Settings**, search for `PODS_` and clear any CocoaPods-specific values from **Framework Search Paths**, **Library Search Paths**, and **User Header Search Paths**.
 
 ### Add a new Run Script build phase
 
@@ -178,7 +197,6 @@ A migration is not done until the app builds in Xcode AND boots on a simulator. 
 ### Pre-flight checklist (common gotchas)
 
 - **Audit every dependency for binary targets BEFORE the first `xcodebuild` run.** For each pod being migrated, open the SPM equivalent's `Package.swift` and look for `.binaryTarget(...)`. If any product is binary (very common for vendor SDKs — GoogleMaps, Firebase Crashlytics, Adyen, etc.), add `exportedPackageSettings { includeProduct = listOf(...) }` to its `swiftPackageConfig` block and wire the auto-generated `<module>/exportedNativeBridge/` into `project.pbxproj` following rule 8. Skipping this audit is the #1 cause of a "green Gradle, red Xcode" migration: the bridge `.a` compiles fine, but the iOS link step fails with `Undefined symbol: _OBJC_CLASS_$_<class>` and you only catch it at the simulator launch.
-- **No `.xcworkspace` left over.** It was deleted with CocoaPods — point `xcodebuild` at `iosApp/iosApp.xcodeproj`. Passing the workspace will fail because it still references the removed `Pods` project.
 - **`build/spmKmpPlugin/` cleared if a previous run failed mid-way.** Stale `scratch/artifacts/` from an aborted SPM fetch surfaces as `XCFramework Info.plist not found` or `unexpected binary name`. `rm -rf <module>/build/spmKmpPlugin` and re-run.
 - **`xcodebuild -resolvePackageDependencies` runs before `xcodebuild build`** if any binary product was added via `exportedPackageSettings`. Otherwise the build fails with `Missing package product` even when the pbxproj is correct.
 

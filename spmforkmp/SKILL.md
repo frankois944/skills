@@ -15,7 +15,7 @@ description: >
 Concretely, before reporting success you must have observed, in this order:
 
 1. `./gradlew :<app-module>:linkDebugFrameworkIosSimulatorArm64` succeeds.
-2. `xcodebuild … build` against the iOS app's `.xcodeproj` (never a deleted `.xcworkspace`) succeeds.
+2. `xcodebuild … build` against the iOS app's `.xcodeproj` (or the `.xcworkspace` if it's not CocoaPods-only) succeeds.
 3. `xcrun simctl install <UDID> <path>.app` succeeds.
 4. `xcrun simctl launch <UDID> <bundle-id>` returns a non-zero PID without an immediate crash.
 
@@ -107,6 +107,6 @@ Always apply these — they are the most common sources of user pain:
 
    For manual `project.pbxproj` editing (CI or no Xcode UI), see `references/troubleshooting.md` § "Undefined symbol".
 
-9. **A migration is not complete until `xcrun simctl launch` returns a PID.** This is the definition of done for every spmForKmp task — see the "Definition of Done" section at the top of this file. Gradle success only proves the bridge compiles; the Xcode build proves linking and embedding; the simulator launch proves the framework loads at runtime with no missing symbols. Run the full sequence in [`references/migration.md`](references/migration.md) § "Final Verification" — `xcodebuild build` against the `.xcodeproj` (never the deleted `.xcworkspace`) on the first available iPhone simulator, then `simctl install` + `simctl launch`. If any step fails or you cannot run the simulator, do **not** report success — keep debugging or surface the unverified status explicitly.
+9. **A migration is not complete until `xcrun simctl launch` returns a PID.** This is the definition of done for every spmForKmp task — see the "Definition of Done" section at the top of this file. Gradle success only proves the bridge compiles; the Xcode build proves linking and embedding; the simulator launch proves the framework loads at runtime with no missing symbols. Run the full sequence in [`references/migration.md`](references/migration.md) § "Final Verification" — `xcodebuild build` against the `.xcodeproj` (or the `.xcworkspace` if it's not CocoaPods-only) on the first available iPhone simulator, then `simctl install` + `simctl launch`. If any step fails or you cannot run the simulator, do **not** report success — keep debugging or surface the unverified status explicitly.
 
    The bridge folder also needs at least one `.swift` file even when `exportToKotlin = true` for every product. Swift PM rejects an "empty" target with `target '<bridgeName>' referenced in product '<bridgeName>' is empty`, so a `.gitkeep` is not enough — drop in a one-line `Bridge.swift` containing `import Foundation`.
