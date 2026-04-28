@@ -16,7 +16,7 @@ The repo contains one skill (`spmforkmp/`) with three layers:
 The skill is structured around three mutually exclusive scenarios. `SKILL.md` routes to the right reference files; the references are not meant to be read all at once:
 
 - **Scenario A** (basic, no external SPM): `setup.md` + `bridge.md`
-- **Scenario B** (external SPM package): `dependencies.md` + `exporting.md` (always both)
+- **Scenario B** (external SPM package): `setup.md` + `exporting.md` (always both)
 - **Scenario C** (migration from CocoaPods plugin): `migration.md`
 
 Additional references (`interoperability.md`, `troubleshooting.md`) are loaded on demand.
@@ -36,5 +36,5 @@ Each reference file is designed to be self-contained and independently useful â€
 ## Editing Guidelines
 
 - Code examples in references must be complete and production-ready â€” no partial snippets.
-- The 9 non-negotiable rules in `SKILL.md` are load-bearing. Changes to rules must be consistent across all affected reference files.
+- The 11 non-negotiable rules in `SKILL.md` are load-bearing. Changes to rules must be consistent across all affected reference files.
 - `evals/evals.json` contains assertions against expected skill outputs. When adding new patterns or rules, consider whether the eval cases need updating.
