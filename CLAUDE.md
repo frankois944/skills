@@ -33,10 +33,6 @@ Each reference file is designed to be self-contained and independently useful �
 
 **`exportToKotlin` is always explicit**: Never omit it; the detection logic lives in `exporting.md`. When in doubt, `false` is the safe default.
 
-**Binary targets need Xcode-side linking**: Dependencies backed by `.binaryTarget(...)` (XCFrameworks) require `exportedPackageSettings { includeProduct = listOf("ProductName") }` and wiring the auto-generated local Swift package into the Xcode project. Skipping this produces a green Gradle build that fails at Xcode link time. Details in `SKILL.md` rule 8 and `troubleshooting.md`.
-
-**Bridge folder must not be empty**: Even when `exportToKotlin = true` for every product, the bridge folder needs at least one `.swift` file (e.g. `import Foundation`) — Swift PM rejects empty targets.
-
 ## Editing Guidelines
 
 - Code examples in references must be complete and production-ready — no partial snippets.
